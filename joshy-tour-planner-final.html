@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Joshy's Tour Planner — Tele-Caller</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<style>
+:root{
+  --ink:#05030f;--ink2:#0d0a20;
+  --g:rgba(255,255,255,.06);--g2:rgba(255,255,255,.11);
+  --b:rgba(255,255,255,.14);--b2:rgba(255,255,255,.26);
+  --teal:#00e5cc;--vio:#8b5cf6;--coral:#ff6b6b;--gold:#f9c74f;
+  --sky:#38bdf8;--mint:#34d399;--pink:#f472b6;--ora:#fb923c;
+  --t1:rgba(255,255,255,.93);--t2:rgba(255,255,255,.55);--t3:rgba(255,255,255,.28);
+  --fh:'Poppins',sans-serif;--fb:'DM Sans',sans-serif;--fm:'JetBrains Mono',monospace;
+  --r8:8px;--r12:12px;--r16:16px;--r20:20px;--r24:24px;--r32:32px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--fb);background:var(--ink);color:var(--t1);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
+
+
+/* STEPPER WIDGET */
+.stpr{display:flex;align-items:stretch;border:1.5px solid var(--b);border-radius:var(--r16);overflow:hidden;background:var(--g2);transition:border-color .2s;}
+.stpr:focus-within{border-color:var(--teal);}
+.stpr input{flex:1;border:none;background:transparent;color:var(--t1);font-family:var(--fh);font-size:18px;font-weight:700;text-align:center;outline:none;padding:12px 6px;min-width:0;-moz-appearance:textfield;}
+.stpr input::-webkit-outer-spin-button,.stpr input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.stpr-btn{width:52px;flex-shrink:0;background:rgba(255,255,255,.06);border:none;color:var(--t2);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.stpr-btn:first-child{border-right:1.5px solid var(--b);}
+.stpr-btn:last-child{border-left:1.5px solid var(--b);}
+.stpr-btn:hover{background:rgba(0,229,204,.15);color:var(--teal);}
+.stpr-btn:active{transform:scale(.9);}
+/* also hide spinners on all .fc number inputs */
+input.fc[type=number]{-moz-appearance:textfield;}
+input.fc[type=number]::-webkit-outer-spin-button,
+input.fc[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+
+
+/* DESTINATION SUGGESTIONS */
+.dest-sugg{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#0d0a22;border:1.5px solid var(--b);border-radius:var(--r12);z-index:500;overflow:hidden;display:none;}
+.dest-sugg.open{display:block;}
+.dest-si{padding:13px 16px;cursor:pointer;font-size:14px;font-family:var(--fh);font-weight:600;display:flex;align-items:center;gap:10px;transition:background .15s;}
+.dest-si:hover{background:rgba(0,229,204,.12);color:var(--teal);}
+.dest-si-sub{font-size:11px;color:var(--t2);font-weight:400;font-family:var(--fb);}
+
+/* FIX checkbox-label double-toggle: pointer-events none on inner spans */
+.locitem,.cpk,.xitem{cursor:pointer;user-select:none;}
+.locitem *:not(input),.cpk *:not(input),.xitem *:not(input){pointer-events:none;}
+/* hide native number spinners globally */
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+input[type=number]{-moz-appearance:textfield;}
+
+
+/* FRESH-UP SESSION ROWS */
+.fu-grid{display:flex;flex-direction:column;gap:8px;}
+.fu-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--g);border:1.5px solid var(--b);border-radius:var(--r16);transition:border-color .2s;}
+.fu-row.fu-on{border-color:var(--sky);background:rgba(56,189,248,.07);}
+.fu-pill{display:flex;align-items:center;gap:8px;flex:1;min-width:0;cursor:pointer;user-select:none;margin:0;}
+.fu-pill *:not(input){pointer-events:none;}
+.fu-sh-wrap{flex-shrink:0;width:130px;opacity:.4;pointer-events:none;transition:opacity .2s;}
+.fu-row.fu-on .fu-sh-wrap{opacity:1;pointer-events:all;}
+
+
+/* PDF BUTTON */
+.btn-pdf{display:inline-flex;align-items:center;gap:9px;padding:14px 28px;border-radius:var(--r16);border:none;background:linear-gradient(135deg,#f9c74f,#fb923c);color:#fff;font-family:var(--fh);font-size:14px;font-weight:800;cursor:pointer;transition:all .3s;box-shadow:0 6px 22px rgba(249,199,79,.4);margin-top:1.4rem;width:100%;justify-content:center;}
+.btn-pdf:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(249,199,79,.55);}
+@media print{
+  body>*:not(.invwrap){display:none!important;}
+  .invwrap{display:block!important;margin:0;padding:0;}
+  .invc{box-shadow:none;backdrop-filter:none;border:none;}
+  .btn-pdf{display:none!important;}
+}
+
+
+/* ACCORDION */
+.acc-day{border:1.5px solid var(--b);border-radius:var(--r20);overflow:hidden;margin-bottom:.8rem;}
+.acc-day:last-child{margin-bottom:0;}
+.acc-hdr{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;background:var(--g2);user-select:none;transition:background .2s;}
+.acc-hdr:hover{background:rgba(255,255,255,.14);}
+.acc-hdr.open{background:rgba(255,255,255,.12);}
+.acc-chevron{margin-left:auto;font-size:13px;color:var(--t2);transition:transform .3s cubic-bezier(.16,1,.3,1);}
+.acc-hdr.open .acc-chevron{transform:rotate(180deg);}
+.acc-body{display:none;padding:14px 16px 16px;}
+.acc-body.open{display:block;animation:accOpen .25s ease both;}
+@keyframes accOpen{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+
+/* DESTINATION SEARCH in itinerary */
+.dest-search-wrap{position:relative;margin-bottom:.9rem;}
+.dest-search-inp{width:100%;padding:14px 46px 14px 46px;background:var(--g2);border:1.5px solid var(--b);border-radius:var(--r16);color:var(--t1);font-family:var(--fb);font-size:15px;outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none;}
+.dest-search-inp:focus{border-color:var(--gold);background:rgba(249,199,79,.05);}
+.dest-search-inp.has-val{border-color:rgba(249,199,79,.4);color:var(--t1);}
+.dest-search-icon{position:absolute;left:15px;top:50%;transform:translateY(-50%);font-size:17px;color:var(--t3);pointer-events:none;transition:color .2s;}
+.dest-search-inp:focus~.dest-search-icon{color:var(--gold);}
+.dest-search-clr{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:var(--t2);font-size:12px;cursor:pointer;display:none;align-items:center;justify-content:center;transition:all .2s;}
+.dest-search-clr:hover{background:rgba(255,107,107,.2);color:var(--coral);}
+.dest-search-inp.has-val~.dest-search-clr{display:flex;}
+.dest-sugg-box{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#0d0a22;border:1.5px solid rgba(249,199,79,.3);border-radius:var(--r16);z-index:600;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.5);display:none;}
+.dest-sugg-box.open{display:block;animation:accOpen .2s ease both;}
+.dest-sugg-item{display:flex;align-items:center;gap:13px;padding:14px 16px;cursor:pointer;transition:background .15s;border-bottom:1px solid rgba(255,255,255,.06);}
+.dest-sugg-item:last-child{border-bottom:none;}
+.dest-sugg-item:hover{background:rgba(249,199,79,.1);}
+.dest-sugg-icon{width:38px;height:38px;border-radius:10px;background:rgba(249,199,79,.12);border:1px solid rgba(249,199,79,.25);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--gold);flex-shrink:0;}
+.dest-sugg-name{font-family:var(--fh);font-size:14px;font-weight:700;color:var(--t1);}
+.dest-sugg-sub{font-size:11px;color:var(--t2);margin-top:2px;}
+.dest-selected-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:rgba(249,199,79,.12);border:1px solid rgba(249,199,79,.3);color:var(--gold);font-family:var(--fh);font-size:12px;font-weight:700;margin-bottom:.8rem;}
+
+/* SCENE */
+.scene{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.orb{position:absolute;border-radius:50%;filter:blur(100px);mix-blend-mode:screen;}
+.o1{width:700px;height:700px;background:radial-gradient(#8b5cf630,#38bdf815);top:-20%;left:-15%;animation:drift 22s ease-in-out infinite alternate;}
+.o2{width:600px;height:600px;background:radial-gradient(#00e5cc20,#8b5cf610);bottom:-15%;right:-15%;animation:drift 18s 3s ease-in-out infinite alternate-reverse;}
+.o3{width:400px;height:400px;background:radial-gradient(#ff6b6b18,transparent);top:40%;left:50%;animation:drift 26s 6s ease-in-out infinite alternate;}
+@keyframes drift{0%{transform:translate(0,0)scale(1);}50%{transform:translate(40px,-60px)scale(1.08);}100%{transform:translate(-30px,50px)scale(.94);}}
+.scene::after{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.018)1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018)1px,transparent 1px);background-size:52px 52px;}
+#rc{position:fixed;inset:0;pointer-events:none;z-index:9050;}
+
+/* FABs */
+.rc-fab{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9000;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,#8b5cf6,#38bdf8);border:none;border-radius:0 16px 16px 0;padding:18px 10px;cursor:pointer;box-shadow:4px 0 28px rgba(139,92,246,.5);transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.rc-fab:hover{padding-right:18px;}
+.fml-fab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:9000;display:flex;flex-direction:column;align-items:center;gap:8px;background:linear-gradient(180deg,#f9c74f,#00e5cc);border:none;border-radius:16px 0 0 16px;padding:18px 10px;cursor:pointer;box-shadow:-4px 0 28px rgba(249,199,79,.45);transition:all .3s cubic-bezier(.34,1.56,.64,1);}
+.fml-fab:hover{padding-left:18px;}
+.fi{font-size:18px;color:#fff;transition:transform .3s;}
+.rc-fab:hover .fi{transform:rotate(20deg)scale(1.1);}
+.fml-fab:hover .fi{transform:rotate(-20deg)scale(1.1);}
+.ft{font-family:var(--fh);font-size:9px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.85);writing-mode:vertical-rl;white-space:nowrap;}
+.rc-fab .ft{transform:rotate(180deg);}
+.fp{position:absolute;top:10px;width:10px;height:10px;border-radius:50%;border:2px solid var(--ink);animation:pulse 2s ease infinite;}
+.rc-fab .fp{right:-4px;background:var(--mint);}
+.fml-fab .fp{left:-4px;background:var(--vio);}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.6);opacity:.4;}}
+
+/* DRAWER */
+.ov{position:fixed;inset:0;z-index:9100;background:rgba(5,3,15,.72);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .35s;}
+.ov.open{opacity:1;pointer-events:all;}
+.dr{position:fixed;top:0;bottom:0;z-index:9200;display:flex;flex-direction:column;transition:transform .42s cubic-bezier(.16,1,.3,1);}
+.dr-l{left:0;width:min(780px,95vw);background:linear-gradient(160deg,#0b0720,#0e1830 55%,#080f1a);border-right:1px solid var(--b);box-shadow:8px 0 60px rgba(0,0,0,.7);transform:translateX(-100%);}
+.dr-r{right:0;width:min(860px,96vw);background:linear-gradient(160deg,#0c1a0e,#0e1c2a 45%,#08101d);border-left:1px solid var(--b);box-shadow:-8px 0 60px rgba(0,0,0,.7);transform:translateX(100%);}
+.dr.open{transform:translateX(0);}
+.drhd{display:flex;align-items:center;gap:1rem;padding:1.1rem 1.6rem;flex-shrink:0;background:rgba(255,255,255,.04);border-bottom:1px solid var(--b);}
+.drhd h2{font-family:var(--fh);font-size:1rem;font-weight:700;flex:1;}
+.drhd p{font-size:11px;color:var(--t2);}
+.dbadge{padding:5px 14px;border-radius:999px;font-size:9.5px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+.bg{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.35);color:var(--mint);}
+.ba{background:rgba(249,199,79,.15);border:1px solid rgba(249,199,79,.35);color:var(--gold);}
+.drx{width:44px;height:44px;border-radius:12px;border:1px solid var(--b);background:var(--g2);color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.drx:hover{background:rgba(255,107,107,.2);border-color:var(--coral);color:var(--coral);}
+.drtabs{display:flex;gap:4px;padding:10px 14px;background:rgba(255,255,255,.02);border-bottom:1px solid rgba(255,255,255,.06);overflow-x:auto;flex-shrink:0;}
+.drtabs::-webkit-scrollbar{height:3px;}
+.drtabs::-webkit-scrollbar-thumb{background:var(--b);border-radius:999px;}
+.drtab{padding:9px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-family:var(--fb);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;min-height:44px;}
+.drtab.active{background:rgba(139,92,246,.2);border-color:rgba(139,92,246,.5);color:#c4b5fd;}
+.dr-r .drtab.active{background:rgba(249,199,79,.18);border-color:rgba(249,199,79,.5);color:var(--gold);}
+.drbody{flex:1;overflow-y:auto;padding:1.4rem 1.6rem;}
+.drbody::-webkit-scrollbar{width:5px;}
+.drbody::-webkit-scrollbar-thumb{background:var(--b);border-radius:999px;}
+.drpanel{display:none;}.drpanel.active{display:block;}
+.drft{padding:14px 16px;border-top:1px solid var(--b);background:rgba(255,255,255,.02);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.drft-note{font-size:10.5px;color:var(--t3);}
+.btn-apply{padding:12px 22px;border-radius:12px;border:none;background:linear-gradient(135deg,#8b5cf6,#38bdf8);color:#fff;font-family:var(--fb);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:7px;min-height:46px;}
+.btn-apply:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(139,92,246,.4);}
+.dr-r .btn-apply{background:linear-gradient(135deg,#f9c74f,#00e5cc);}
+.btn-rst{padding:12px 18px;border-radius:12px;border:1px solid var(--b);background:transparent;color:var(--t2);font-family:var(--fb);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;min-height:46px;}
+.btn-rst:hover{border-color:rgba(255,107,107,.4);color:var(--coral);}
+
+/* RC TABLES */
+.rct{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1rem;}
+.rct thead tr{background:rgba(255,255,255,.06);}
+.rct th{padding:9px 11px;text-align:center;font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t2);border:1px solid rgba(255,255,255,.07);}
+.rct th.rl{text-align:left;}
+.rct td{padding:5px 7px;border:1px solid rgba(255,255,255,.05);text-align:center;}
+.rct td.rl{text-align:left;font-size:12px;font-weight:600;color:var(--t2);padding:5px 11px;background:rgba(255,255,255,.02);}
+.rci{width:100%;background:var(--g2);border:1px solid var(--b);border-radius:7px;padding:6px 9px;color:var(--t1);font-family:var(--fb);font-size:12px;text-align:center;outline:none;transition:border-color .2s;}
+.rci:focus{border-color:var(--vio);background:rgba(139,92,246,.1);}
+.drsec{margin-bottom:1.6rem;}
+.drsec-t{font-size:9.5px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--t3);padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:10px;}
+.vcg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.vci{background:var(--g);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:11px 13px;}
+.vcn{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t2);margin-bottom:8px;}
+.vcr{display:flex;align-items:center;justify-content:space-between;gap:7px;margin-bottom:5px;}
+.vcl{font-size:10px;color:var(--t3);white-space:nowrap;}
+.vcr .rci{max-width:88px;}
+.pftr{display:flex;align-items:center;gap:14px;background:var(--g);border:1px solid var(--b);border-radius:12px;padding:14px 18px;}
+.pftr label{font-size:12px;color:var(--t2);font-weight:600;}
+.pftr .rci{max-width:110px;font-size:14px;font-weight:700;}
+.pftn{font-size:11px;color:var(--t3);margin-top:6px;}
+
+/* FORMULA DRAWER */
+.fmlcard{background:var(--g);border:1px solid rgba(255,255,255,.08);border-radius:var(--r16);padding:1.4rem;margin-bottom:1rem;}
+.fmlhd{display:flex;align-items:flex-start;gap:12px;margin-bottom:1.1rem;padding-bottom:.9rem;border-bottom:1px solid rgba(255,255,255,.06);}
+.fmlnum{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.fmlttl{font-family:var(--fh);font-size:14px;font-weight:700;margin-bottom:3px;}
+.fmlsub{font-size:11px;color:var(--t2);line-height:1.5;}
+.varleg{display:grid;grid-template-columns:auto 1fr auto;border:1px solid rgba(255,255,255,.07);border-radius:var(--r8);overflow:hidden;margin-bottom:1rem;font-size:12px;}
+.varleg-h{display:contents;}
+.varleg-h>div{padding:6px 11px;background:rgba(255,255,255,.06);font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);border-bottom:1px solid rgba(255,255,255,.07);}
+.varr{display:contents;}
+.varr>div{padding:7px 11px;border-bottom:1px solid rgba(255,255,255,.03);}
+.varr:last-child>div{border-bottom:none;}
+.varr>div:nth-child(1){background:rgba(255,255,255,.02);}
+.varr>div:nth-child(2){color:var(--t2);}
+.varr>div:nth-child(3){text-align:right;color:var(--t3);font-size:10.5px;}
+.vchip{display:inline-block;padding:2px 9px;border-radius:999px;font-family:var(--fm);font-size:10.5px;font-weight:500;}
+.vc{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.28);color:var(--sky);}
+.va{background:rgba(249,199,79,.12);border:1px solid rgba(249,199,79,.28);color:var(--gold);}
+.vg{background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.28);color:var(--mint);}
+.vo{background:rgba(251,146,60,.12);border:1px solid rgba(251,146,60,.28);color:var(--ora);}
+.fmlel{font-size:9.5px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--t3);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;}
+.fmlst{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;}
+.fmlst.ok{color:var(--mint);}.fmlst.err{color:var(--coral);}
+.fmlta{width:100%;background:#060a0f;border:1.5px solid var(--b);border-radius:var(--r8);padding:12px 14px;color:#e2e8f0;font-family:var(--fm);font-size:13px;line-height:1.6;outline:none;resize:vertical;min-height:60px;transition:border-color .2s;}
+.fmlta:focus{border-color:rgba(249,199,79,.5);}
+.fmlta.eb{border-color:rgba(255,107,107,.5);}
+.fmlem{font-size:10.5px;color:var(--coral);margin-top:4px;min-height:16px;}
+.fmlprev{background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.15);border-radius:var(--r8);padding:9px 13px;font-size:12px;color:var(--t2);margin-bottom:.6rem;}
+.fmlprev strong{color:var(--mint);font-size:13px;}
+.fmlnote{background:rgba(56,189,248,.04);border-left:3px solid rgba(56,189,248,.3);border-radius:0 var(--r8) var(--r8) 0;padding:9px 13px;font-size:11px;color:var(--t2);line-height:1.6;}
+
+/* TOASTS */
+.toast{position:fixed;bottom:2.5rem;left:50%;transform:translateX(-50%)translateY(20px);backdrop-filter:blur(20px);border-radius:999px;padding:12px 26px;font-size:13px;font-weight:600;z-index:9999;opacity:0;pointer-events:none;transition:all .35s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%)translateY(0);}
+#rcToast{background:rgba(52,211,153,.18);border:1px solid rgba(52,211,153,.38);color:var(--mint);}
+#fmlToast{background:rgba(249,199,79,.18);border:1px solid rgba(249,199,79,.38);color:var(--gold);}
+
+/* WIZARD */
+.shell{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:0 60px;}
+.topbar{width:100%;max-width:900px;display:flex;align-items:center;justify-content:space-between;padding:1.4rem 0 1rem;}
+.brand{display:flex;align-items:center;gap:12px;}
+.bm{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--vio),var(--teal));display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 4px 14px rgba(139,92,246,.45);}
+.bn{font-family:var(--fh);font-size:16px;font-weight:800;}
+.bs{font-size:10px;color:var(--t2);letter-spacing:1.5px;text-transform:uppercase;}
+.sc{font-size:12px;color:var(--t3);font-weight:600;}
+.sc span{color:var(--teal);font-weight:800;}
+
+/* PROGRESS */
+.pw{width:100%;max-width:900px;margin-bottom:2rem;}
+.pt{display:flex;align-items:center;position:relative;}
+.pt::before{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:rgba(255,255,255,.08);transform:translateY(-50%);z-index:0;border-radius:999px;}
+.ps{display:flex;flex-direction:column;align-items:center;flex:1;position:relative;z-index:1;cursor:pointer;}
+.pd{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.12);background:var(--ink2);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--t3);transition:all .4s cubic-bezier(.34,1.56,.64,1);position:relative;}
+.pd::after{content:'';position:absolute;inset:-5px;border-radius:50%;border:2px solid transparent;transition:all .4s ease;}
+.pll{font-family:var(--fh);font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--t3);margin-top:8px;text-align:center;line-height:1.3;max-width:62px;transition:color .3s;}
+.pline{flex:1;height:2px;background:rgba(255,255,255,.08);position:relative;z-index:0;transition:background .4s;margin-top:-18px;}
+.ps.done .pd{background:linear-gradient(135deg,var(--vio),var(--teal));border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(139,92,246,.5);}
+.ps.done .pll{color:var(--t2);}
+.ps.active .pd{background:linear-gradient(135deg,var(--teal),var(--vio));border-color:transparent;color:#fff;box-shadow:0 0 0 5px rgba(0,229,204,.15),0 6px 20px rgba(139,92,246,.5);transform:scale(1.2);}
+.ps.active .pd::after{border-color:var(--teal);animation:ring 2s ease infinite;}
+.ps.active .pll{color:var(--teal);font-weight:800;}
+.pline.done{background:linear-gradient(90deg,var(--vio),var(--teal));}
+@keyframes ring{0%,100%{transform:scale(1);opacity:.6;}50%{transform:scale(1.15);opacity:1;}}
+
+/* STEP CARD */
+.stage{width:100%;max-width:900px;position:relative;min-height:520px;}
+.card{position:absolute;inset:0;background:var(--g);border:1px solid var(--b);border-radius:var(--r32);backdrop-filter:blur(32px)saturate(160%);box-shadow:0 12px 40px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.12);overflow:hidden;display:flex;flex-direction:column;opacity:0;pointer-events:none;}
+.card.cur{opacity:1;pointer-events:all;position:relative;}
+.card.ein-r{animation:sinR .55s cubic-bezier(.16,1,.3,1) forwards;}
+.card.ein-l{animation:sinL .55s cubic-bezier(.16,1,.3,1) forwards;}
+.card.eout-l{animation:soutL .45s cubic-bezier(.4,0,1,1) forwards;}
+.card.eout-r{animation:soutR .45s cubic-bezier(.4,0,1,1) forwards;}
+@keyframes sinR{0%{opacity:0;transform:translateX(80px)scale(.96);filter:blur(8px);}40%{filter:blur(0);}100%{opacity:1;transform:none;}}
+@keyframes sinL{0%{opacity:0;transform:translateX(-80px)scale(.96);filter:blur(8px);}40%{filter:blur(0);}100%{opacity:1;transform:none;}}
+@keyframes soutL{0%{opacity:1;transform:none;}100%{opacity:0;transform:translateX(-80px)scale(.96);filter:blur(6px);}}
+@keyframes soutR{0%{opacity:1;transform:none;}100%{opacity:0;transform:translateX(80px)scale(.96);filter:blur(6px);}}
+.chd{display:flex;align-items:center;gap:1rem;padding:1.4rem 2rem;border-bottom:1px solid var(--b);background:rgba(255,255,255,.03);flex-shrink:0;}
+.cicon{width:50px;height:50px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0;}
+.cttl{font-family:var(--fh);font-size:1.15rem;font-weight:800;line-height:1.2;}
+.csub{font-size:12px;color:var(--t2);margin-top:3px;}
+.cbadge{margin-left:auto;font-family:var(--fh);font-size:9.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:999px;white-space:nowrap;}
+.cbody{flex:1;overflow-y:auto;padding:1.8rem 2rem;}
+.cbody::-webkit-scrollbar{width:4px;}
+.cbody::-webkit-scrollbar-thumb{background:var(--b);border-radius:999px;}
+.cft{display:flex;align-items:center;justify-content:space-between;padding:1.2rem 2rem;border-top:1px solid var(--b);background:rgba(255,255,255,.02);flex-shrink:0;gap:1rem;}
+.btn-bk{padding:14px 24px;border-radius:var(--r16);border:1px solid var(--b);background:var(--g2);color:var(--t2);font-family:var(--fh);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:9px;min-height:52px;}
+.btn-bk:hover{border-color:var(--b2);color:var(--t1);}
+.btn-nx{padding:14px 32px;border-radius:var(--r16);border:none;background:linear-gradient(135deg,var(--teal),var(--vio));color:#fff;font-family:var(--fh);font-size:14px;font-weight:800;cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);display:flex;align-items:center;gap:9px;box-shadow:0 6px 22px rgba(139,92,246,.38);min-height:52px;}
+.btn-nx:hover{transform:translateY(-2px)scale(1.03);box-shadow:0 10px 30px rgba(139,92,246,.55);}
+.btn-calc{width:100%;padding:16px 32px;border-radius:var(--r16);border:none;background:linear-gradient(135deg,var(--gold),#ff9800 50%,var(--coral));color:#fff;font-family:var(--fh);font-size:16px;font-weight:800;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 8px 28px rgba(249,199,79,.4);min-height:54px;}
+.btn-calc:hover{transform:translateY(-3px)scale(1.02);box-shadow:0 14px 38px rgba(249,199,79,.6);}
+.cft-note{font-size:11.5px;color:var(--t3);}
+
+/* FORM CONTROLS */
+.flbl{display:block;font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t2);margin-bottom:6px;}
+.fc{width:100%;padding:14px 16px;background:var(--g2);border:1.5px solid var(--b);border-radius:var(--r16);color:var(--t1);font-family:var(--fb);font-size:15px;outline:none;transition:border-color .2s,background .2s;-webkit-appearance:none;appearance:none;min-height:52px;}
+.fc:focus{border-color:var(--teal);background:rgba(0,229,204,.05);}
+select.fc{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2300e5cc'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;background-size:20px;padding-right:44px;}
+select.fc option{background:#14093a;}
+.frow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:1rem;}
+.frow.c2{grid-template-columns:1fr 1fr;}
+.frow.c3{grid-template-columns:1fr 1fr 1fr;}
+.frow.c4{grid-template-columns:1fr 1fr 1fr 1fr;}
+.fld{display:flex;flex-direction:column;}
+.span2{grid-column:span 2;}
+.info{font-size:12px;color:var(--t3);margin-top:5px;line-height:1.6;}
+
+/* Category pills */
+.cat-wrap{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:1rem;}
+.cpill{padding:13px 22px;border-radius:999px;border:1.5px solid var(--b);background:transparent;font-family:var(--fh);font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;color:var(--t2);user-select:none;min-height:52px;display:inline-flex;align-items:center;}
+.cpill:hover{border-color:rgba(0,229,204,.4);color:var(--teal);}
+.cpill.active{background:linear-gradient(135deg,var(--teal),var(--vio));border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(0,229,204,.3);}
+
+/* Day card */
+.dc{background:var(--g2);border:1px solid var(--b);border-radius:var(--r20);padding:1.3rem;margin-bottom:1rem;}
+.dc:last-child{margin-bottom:0;}
+.dchd{display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding-bottom:.9rem;border-bottom:1px solid rgba(255,255,255,.06);}
+.dbadge{padding:5px 14px;border-radius:999px;font-family:var(--fh);font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;}
+.db0{background:rgba(0,229,204,.12);color:var(--teal);border:1px solid rgba(0,229,204,.25);}
+.db1{background:rgba(139,92,246,.12);color:#c4b5fd;border:1px solid rgba(139,92,246,.25);}
+.db2{background:rgba(249,199,79,.12);color:var(--gold);border:1px solid rgba(249,199,79,.25);}
+.db3{background:rgba(244,114,182,.12);color:var(--pink);border:1px solid rgba(244,114,182,.25);}
+
+/* Toggle */
+.togwrap{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.tog{position:relative;width:52px;height:28px;display:inline-block;}
+.tog input{opacity:0;width:0;height:0;position:absolute;}
+.togsl{position:absolute;inset:0;background:rgba(255,255,255,.08);border-radius:999px;cursor:pointer;transition:all .2s;border:1.5px solid var(--b);}
+.togsl::before{content:'';position:absolute;width:20px;height:20px;left:4px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.4);border-radius:50%;transition:all .2s;}
+.tog input:checked+.togsl{background:rgba(52,211,153,.3);border-color:var(--mint);}
+.tog input:checked+.togsl::before{transform:translate(24px,-50%);background:var(--mint);}
+
+/* Room matrix */
+.mhd{display:grid;grid-template-columns:1.5fr 1fr 44px;gap:8px;padding:4px 8px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--t3);}
+.mr{display:grid;grid-template-columns:1.5fr 1fr 44px;gap:8px;align-items:center;padding:5px 0;}
+.btn-del{width:44px;height:44px;border-radius:12px;border:1px solid var(--b);background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;}
+.btn-del:hover{background:rgba(255,107,107,.14);border-color:var(--coral);color:var(--coral);}
+.btn-add{display:inline-flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;border:1.5px dashed rgba(0,229,204,.4);background:rgba(0,229,204,.05);color:var(--teal);font-family:var(--fh);font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;min-height:48px;margin-top:10px;}
+.btn-add:hover{background:rgba(0,229,204,.12);border-color:var(--teal);}
+
+/* Checkboxes */
+.pills{display:flex;flex-wrap:wrap;gap:10px;}
+.cpk{display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;border:1.5px solid var(--b);background:transparent;cursor:pointer;font-size:13px;font-weight:500;color:var(--t2);user-select:none;transition:all .2s;min-height:48px;}
+.cpk input{display:none;}
+.cpk:hover{border-color:rgba(0,229,204,.4);color:var(--teal);}
+.cpk.on{background:rgba(0,229,204,.1);border-color:var(--teal);color:var(--teal);}
+.pdot{width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0;}
+.cpk.on .pdot{opacity:1;}
+
+/* Meal grid */
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.mitem{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:var(--r16);border:1.5px solid var(--b);background:transparent;transition:all .2s;min-height:56px;}
+.mitem.on{border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.06);}
+.mchk{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--b2);background:transparent;cursor:pointer;appearance:none;-webkit-appearance:none;transition:all .2s;flex-shrink:0;}
+.mchk:checked{background:var(--mint);border-color:var(--mint);}
+.mlbl{flex:1;font-family:var(--fh);font-size:14px;font-weight:600;cursor:pointer;}
+.vt{display:flex;border-radius:999px;overflow:hidden;border:1.5px solid var(--b);flex-shrink:0;}
+.vt input{display:none;}
+.vt label{padding:7px 13px;font-size:11px;font-weight:700;cursor:pointer;color:var(--t2);transition:all .2s;letter-spacing:.4px;font-family:var(--fh);}
+.vt input:checked+label.vl{background:rgba(52,211,153,.28);color:var(--mint);}
+.vt input:checked+label.nvl{background:rgba(249,199,79,.28);color:var(--gold);}
+
+/* Location */
+.locgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-top:10px;}
+.locitem{display:flex;align-items:center;gap:10px;padding:13px 15px;border-radius:var(--r12);border:1.5px solid var(--b);background:transparent;cursor:pointer;font-size:13px;transition:all .2s;min-height:50px;}
+.locitem:hover{border-color:rgba(249,199,79,.35);}
+.locitem.on{border-color:var(--gold);background:rgba(249,199,79,.08);color:var(--gold);}
+.locitem input{display:none;}
+.ldot{width:8px;height:8px;border-radius:50%;background:currentColor;opacity:.5;flex-shrink:0;}
+.locitem.on .ldot{opacity:1;}
+
+/* Entertainment */
+.entg{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.eitem{display:flex;align-items:center;gap:14px;padding:18px 20px;border-radius:var(--r20);border:1.5px solid var(--b);background:transparent;cursor:pointer;transition:all .2s;min-height:54px;}
+.eitem input{display:none;}
+.eicon{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;border:1px solid var(--b);background:var(--g);transition:all .2s;}
+.en{font-family:var(--fh);font-size:15px;font-weight:700;margin-bottom:4px;}
+.ec{font-size:12px;color:var(--t2);}
+.eitem:hover{border-color:rgba(244,114,182,.4);}
+.eitem.on{border-color:var(--pink);background:rgba(244,114,182,.08);}
+.eitem.on .eicon{background:rgba(244,114,182,.15);border-color:rgba(244,114,182,.3);}
+
+/* Extra charges */
+.extg{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.xitem{display:flex;flex-direction:column;align-items:center;padding:16px 8px;border-radius:var(--r16);border:1.5px solid var(--b);background:transparent;cursor:pointer;transition:all .2s;text-align:center;min-height:90px;}
+.xitem input{display:none;}
+.xi{font-size:24px;margin-bottom:6px;}
+.xn{font-size:12px;font-weight:700;font-family:var(--fh);}
+.xc{font-size:10px;color:var(--t2);margin-top:3px;}
+.xitem:hover{border-color:rgba(251,146,60,.4);}
+.xitem.on{border-color:var(--ora);background:rgba(251,146,60,.1);color:var(--ora);}
+.xitem.on .xc{color:rgba(251,146,60,.65);}
+
+/* Vehicle */
+.vtg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.4rem;}
+.vtile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px 16px;background:var(--g);border:1.5px solid var(--b);border-radius:var(--r20);cursor:pointer;transition:all .25s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;min-height:150px;}
+.vtile:hover{border-color:rgba(139,92,246,.55);transform:translateY(-3px);box-shadow:0 10px 30px rgba(139,92,246,.25);}
+.vtile:active{transform:scale(.96);}
+.vti{width:60px;height:60px;border-radius:var(--r16);background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(0,229,204,.15));border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:26px;color:#c4b5fd;transition:transform .25s cubic-bezier(.34,1.56,.64,1);}
+.vtile:hover .vti{transform:scale(1.1)rotate(-4deg);}
+.vtn{font-family:var(--fh);font-size:16px;font-weight:700;}
+.vts{font-size:12px;color:var(--t2);}
+.vtplus{position:absolute;top:12px;right:12px;width:28px;height:28px;border-radius:9px;background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.3);display:flex;align-items:center;justify-content:center;font-size:12px;color:#c4b5fd;transition:all .2s;}
+.vtile:hover .vtplus{background:rgba(139,92,246,.35);transform:rotate(90deg);}
+.fleet-row{display:flex;align-items:center;gap:12px;background:var(--g2);border:1px solid var(--b);border-radius:var(--r16);padding:13px 15px;margin-bottom:9px;animation:popIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+@keyframes popIn{from{opacity:0;transform:scale(.97);}to{opacity:1;transform:none;}}
+.frt{width:44px;height:44px;border-radius:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.frt.bus{background:rgba(139,92,246,.18);border:1px solid rgba(139,92,246,.3);color:#c4b5fd;}
+.frt.trav{background:rgba(0,229,204,.15);border:1px solid rgba(0,229,204,.28);color:var(--teal);}
+.fri{flex:1;min-width:0;}
+.frn{font-family:var(--fh);font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.frm{font-size:11.5px;color:var(--t2);margin-top:2px;}
+.frc{display:flex;align-items:center;border:1.5px solid var(--b);border-radius:999px;overflow:hidden;flex-shrink:0;}
+.fcb{width:40px;height:40px;background:var(--g2);border:none;color:var(--t2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-weight:700;}
+.fcb:hover{background:rgba(0,229,204,.15);color:var(--teal);}
+.fcv{min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:15px;font-weight:800;background:var(--g);border-left:1px solid var(--b);border-right:1px solid var(--b);}
+.btn-x{width:40px;height:40px;border-radius:11px;border:1px solid var(--b);background:transparent;color:var(--t3);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .2s;flex-shrink:0;}
+.btn-x:hover{background:rgba(255,107,107,.14);border-color:var(--coral);color:var(--coral);}
+/* VP modal */
+.vpbd{position:fixed;inset:0;z-index:9500;background:rgba(5,3,15,.65);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .3s;}
+.vpbd.open{opacity:1;pointer-events:all;}
+.vpmodal{position:fixed;left:50%;bottom:0;z-index:9600;width:min(560px,100vw);background:linear-gradient(170deg,#121030,#0d1a30 60%,#090f1c);border:1px solid rgba(255,255,255,.16);border-radius:var(--r24) var(--r24) 0 0;box-shadow:0 -16px 60px rgba(0,0,0,.7);transform:translateX(-50%)translateY(100%);transition:transform .4s cubic-bezier(.16,1,.3,1);}
+.vpmodal::before{content:'';display:block;width:44px;height:5px;border-radius:999px;background:rgba(255,255,255,.22);margin:14px auto 0;}
+.vpmodal.open{transform:translateX(-50%)translateY(0);}
+.vphd{display:flex;align-items:center;gap:12px;padding:13px 20px 15px;border-bottom:1px solid var(--b);}
+.vphi{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,rgba(139,92,246,.25),rgba(0,229,204,.15));border:1px solid rgba(139,92,246,.35);display:flex;align-items:center;justify-content:center;font-size:20px;color:#c4b5fd;flex-shrink:0;}
+.vptl{font-family:var(--fh);font-size:17px;font-weight:800;}
+.vpbody{padding:14px 16px 22px;}
+.vpopts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+.vpopt{display:flex;flex-direction:column;align-items:flex-start;padding:16px 17px;border-radius:var(--r16);border:1.5px solid var(--b);background:var(--g);cursor:pointer;transition:all .2s;min-height:70px;}
+.vpopt:hover{border-color:rgba(139,92,246,.5);background:rgba(139,92,246,.08);}
+.vpopt.sel{border-color:var(--vio);background:rgba(139,92,246,.18);box-shadow:0 0 0 3px rgba(139,92,246,.15);}
+.vpseats{font-family:var(--fh);font-size:16px;font-weight:700;color:var(--t1);}
+.vpprice{font-size:11.5px;color:var(--t2);margin-top:4px;}
+.vpchk{width:22px;height:22px;border-radius:50%;border:2px solid var(--b);margin-left:auto;align-self:flex-end;display:flex;align-items:center;justify-content:center;font-size:10px;color:transparent;transition:all .2s;}
+.vpopt.sel .vpchk{background:var(--vio);border-color:var(--vio);color:#fff;}
+.vpconfirm{width:100%;padding:16px;border-radius:var(--r16);border:none;background:linear-gradient(135deg,var(--vio),var(--teal));color:#fff;font-family:var(--fh);font-size:15px;font-weight:800;cursor:pointer;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:9px;box-shadow:0 6px 20px rgba(139,92,246,.35);min-height:52px;}
+.vpconfirm:hover{transform:translateY(-1px);}
+.vpconfirm:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+
+/* misc */
+.divider{height:1px;background:var(--b);margin:.9rem 0;}
+.empty{text-align:center;color:var(--t3);padding:2rem 0;font-size:14px;}
+.slbl{display:block;font-family:var(--fh);font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:var(--t2);margin-bottom:.5rem;}
+.ic-teal{background:rgba(0,229,204,.15);border:1px solid rgba(0,229,204,.3);}
+.ic-vio{background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);}
+.ic-gold{background:rgba(249,199,79,.15);border:1px solid rgba(249,199,79,.3);}
+.ic-mint{background:rgba(52,211,153,.15);border:1px solid rgba(52,211,153,.3);}
+.ic-sky{background:rgba(56,189,248,.15);border:1px solid rgba(56,189,248,.3);}
+.ic-ora{background:rgba(251,146,60,.15);border:1px solid rgba(251,146,60,.3);}
+.ic-pink{background:rgba(244,114,182,.15);border:1px solid rgba(244,114,182,.3);}
+.ic-coral{background:rgba(255,107,107,.15);border:1px solid rgba(255,107,107,.3);}
+
+/* Invoice */
+.invwrap{width:100%;max-width:900px;margin:1.5rem 0 4rem;animation:popIn .5s ease both;}
+.invc{background:linear-gradient(135deg,rgba(255,255,255,.09),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.18);border-radius:var(--r32);backdrop-filter:blur(30px);padding:2.4rem;box-shadow:0 24px 64px rgba(0,0,0,.55);}
+.invhd{text-align:center;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid var(--b);}
+.invlogo{font-size:10.5px;letter-spacing:3px;text-transform:uppercase;color:var(--teal);margin-bottom:.4rem;font-family:var(--fh);}
+.invttl{font-family:var(--fh);font-size:1.9rem;font-weight:800;}
+.invref{font-size:12px;color:var(--t2);margin-top:3px;}
+.invmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.4rem;}
+.mbox{background:var(--g);border:1px solid var(--b);border-radius:var(--r16);padding:13px 16px;}
+.mlbl{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);margin-bottom:3px;}
+.mval{font-size:13.5px;font-weight:700;}
+.csec{margin-bottom:.8rem;}
+.csect{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--b);margin-bottom:5px;font-family:var(--fh);}
+.crow{display:flex;justify-content:space-between;align-items:flex-start;padding:6px 0;font-size:13px;border-bottom:1px solid rgba(255,255,255,.03);}
+.crow:last-child{border-bottom:none;}
+.cn{color:var(--t2);}.ca{font-weight:700;flex-shrink:0;margin-left:1rem;}
+.crow.sub{border-top:1px solid var(--b);margin-top:3px;padding-top:7px;font-weight:700;}
+.invtot{background:linear-gradient(135deg,rgba(0,229,204,.08),rgba(139,92,246,.08));border:1px solid rgba(0,229,204,.2);border-radius:var(--r16);padding:1.5rem;margin-top:1rem;}
+.trow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.tlbl{font-size:13px;color:var(--t2);}.tval{font-weight:700;font-size:14px;}
+.grand{margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(0,229,204,.25);}
+.glbl{font-family:var(--fh);font-size:16px;font-weight:800;}
+.gval{font-family:var(--fh);font-size:2.4rem;font-weight:900;background:linear-gradient(135deg,var(--teal),var(--vio));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.ph{margin-top:9px;text-align:right;font-size:13px;color:var(--t2);}
+.ph strong{color:var(--mint);font-size:16px;font-family:var(--fh);}
+.invfoot{text-align:center;margin-top:1.4rem;font-size:12px;color:var(--t3);}
+
+@media(max-width:700px){
+  .shell{padding:0 12px;}
+  .cbody{padding:1.2rem;}.chd{padding:1rem 1.2rem;}.cft{padding:1rem 1.2rem;}
+  .frow.c2,.mgrid,.entg{grid-template-columns:1fr;}
+  .frow.c4,.extg{grid-template-columns:1fr 1fr;}
+  .vpopts{grid-template-columns:1fr;}
+  .invmeta{grid-template-columns:1fr 1fr;}
+  .pll{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="scene"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
+<canvas id="rc"></canvas>
+
+<!-- FABs -->
+<button class="rc-fab" onclick="openRC()"><span class="fp"></span><span class="fi"><i class="fa-solid fa-table-cells"></i></span><span class="ft">Rate Card</span></button>
+<button class="fml-fab" onclick="openFML()"><span class="fp"></span><span class="fi"><i class="fa-solid fa-function"></i></span><span class="ft">Formulas</span></button>
+
+<!-- RC DRAWER -->
+<div class="ov" id="rcOv" onclick="closeRC()"></div>
+<div class="dr dr-l" id="rcDr">
+  <div class="drhd">
+    <div class="cicon ic-vio" style="flex-shrink:0;width:44px;height:44px;border-radius:12px"><i class="fa-solid fa-table-cells-large" style="color:#c4b5fd"></i></div>
+    <div style="flex:1"><h2>Live Rate Card Editor</h2><p>Edit any value — changes apply on next calculation</p></div>
+    <div class="dbadge bg"><i class="fa-solid fa-pen-to-square"></i> Editable</div>
+    <button class="drx" onclick="closeRC()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drtabs" id="rcTabs">
+    <button class="drtab active" onclick="rcTab(0,this)"><i class="fa-solid fa-bus"></i> Vehicle</button>
+    <button class="drtab" onclick="rcTab(1,this)"><i class="fa-solid fa-bed"></i> Room Rent</button>
+    <button class="drtab" onclick="rcTab(2,this)"><i class="fa-solid fa-shower"></i> Fresh-ups</button>
+    <button class="drtab" onclick="rcTab(3,this)"><i class="fa-solid fa-leaf"></i> Food Veg</button>
+    <button class="drtab" onclick="rcTab(4,this)"><i class="fa-solid fa-drumstick-bite"></i> Food N.Veg</button>
+    <button class="drtab" onclick="rcTab(5,this)"><i class="fa-solid fa-ticket"></i> Entry Fees</button>
+    <button class="drtab" onclick="rcTab(6,this)"><i class="fa-solid fa-music"></i> Entertainment</button>
+    <button class="drtab" onclick="rcTab(7,this)"><i class="fa-solid fa-briefcase"></i> Extra</button>
+    <button class="drtab" onclick="rcTab(8,this)"><i class="fa-solid fa-chart-line"></i> Profit %</button>
+  </div>
+  <div class="drbody">
+    <div class="drpanel active" id="rcp0"><div class="drsec"><div class="drsec-t">Vehicle Charges</div><div class="vcg" id="rcVg"></div></div></div>
+    <div class="drpanel" id="rcp1"><div class="drsec"><div class="drsec-t">Room Rent — Per Student Per Night (&#8377;)</div><table class="rct" id="rcRoom"></table></div></div>
+    <div class="drpanel" id="rcp2"><div class="drsec"><div class="drsec-t">Fresh-up — Per Student Per Session (&#8377;)</div><table class="rct" id="rcFu"></table></div></div>
+    <div class="drpanel" id="rcp3"><div class="drsec"><div class="drsec-t">Food Vegetarian — Per Person Per Meal (&#8377;)</div><table class="rct" id="rcFv"></table></div></div>
+    <div class="drpanel" id="rcp4"><div class="drsec"><div class="drsec-t">Food Non-Veg — Per Person Per Meal (&#8377;)</div><table class="rct" id="rcFnv"></table></div></div>
+    <div class="drpanel" id="rcp5"><div class="drsec"><div class="drsec-t">Entry Fees — Per Person (&#8377;)</div><p class="info" style="margin-bottom:10px">Staffs always billed at CLG rate.</p><table class="rct" id="rcEf"></table></div></div>
+    <div class="drpanel" id="rcp6"><div class="drsec"><div class="drsec-t">Entertainment — Per Event Per Vehicle (&#8377;)</div><table class="rct" id="rcEnt"></table></div></div>
+    <div class="drpanel" id="rcp7"><div class="drsec"><div class="drsec-t">Extra Charges — Per Day (&#8377;)</div><table class="rct" id="rcExt"></table></div></div>
+    <div class="drpanel" id="rcp8"><div class="drsec"><div class="drsec-t">Profit Percentage</div><div class="pftr"><label>Profit Margin (%)</label><input class="rci" type="number" id="rcProfit" value="20" min="0" max="100" step="0.5"><span style="font-size:13px;color:var(--t2)">% on total</span></div><p class="pftn">e.g. 20 = 20% added over base cost.</p></div></div>
+  </div>
+  <div class="drft">
+    <span class="drft-note"><i class="fa-solid fa-circle-info"></i> Changes apply on next calculation</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn-rst" onclick="resetRC()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+      <button class="btn-apply" onclick="applyRC()"><i class="fa-solid fa-check"></i> Apply &amp; Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- FML DRAWER -->
+<div class="ov" id="fmlOv" onclick="closeFML()"></div>
+<div class="dr dr-r" id="fmlDr">
+  <div class="drhd">
+    <div class="cicon ic-gold" style="flex-shrink:0;width:44px;height:44px;border-radius:12px"><i class="fa-solid fa-square-root-variable" style="color:var(--gold)"></i></div>
+    <div style="flex:1"><h2>Calculation Formula Editor</h2><p>View and edit the logic behind every cost calculation</p></div>
+    <div class="dbadge ba"><i class="fa-solid fa-code"></i> Live Logic</div>
+    <button class="drx" onclick="closeFML()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="drtabs" id="fmlTabs"></div>
+  <div class="drbody" id="fmlBody"></div>
+  <div class="drft">
+    <span class="drft-note"><i class="fa-solid fa-circle-info"></i> Standard JS math — use Math.max(), Math.min() etc.</span>
+    <div style="display:flex;gap:8px">
+      <button class="btn-rst" onclick="resetFML()"><i class="fa-solid fa-rotate-left"></i> Reset All</button>
+      <button class="btn-apply" onclick="applyFML()"><i class="fa-solid fa-check"></i> Apply &amp; Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="rcToast"></div>
+<div class="toast" id="fmlToast"></div>
+
+<!-- VEHICLE PICKER MODAL -->
+<div class="vpbd" id="vpBd" onclick="closeVP()"></div>
+<div class="vpmodal" id="vpModal">
+  <div class="vphd">
+    <div class="vphi" id="vpIcon"><i class="fa-solid fa-bus"></i></div>
+    <div><div class="vptl" id="vpTitle">Choose Vehicle</div></div>
+    <button class="drx" style="margin-left:auto" onclick="closeVP()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="vpbody" id="vpBody"></div>
+</div>
+
+<!-- WIZARD -->
+<div class="shell">
+  <div class="topbar">
+    <div class="brand">
+      <div class="bm"><i class="fa-solid fa-route"></i></div>
+      <div><div class="bn">Joshy's Tour Planner</div><div class="bs">Tele-Caller Portal</div></div>
+    </div>
+    <div class="sc">Step <span id="stepNum">1</span> of 9</div>
+  </div>
+  <div class="pw"><div class="pt" id="progTrack"></div></div>
+
+  <div class="stage" id="stage">
+
+    <!-- STEP 1 -->
+    <div class="card" id="card-0">
+      <div class="chd">
+        <div class="cicon ic-teal"><i class="fa-solid fa-school" style="color:var(--teal)"></i></div>
+        <div><div class="cttl">Basic Information</div><div class="csub">School details, category &amp; trip duration</div></div>
+        <div class="cbadge" style="background:rgba(0,229,204,.1);border:1px solid rgba(0,229,204,.25);color:var(--teal)">STEP 01</div>
+      </div>
+      <div class="cbody">
+        <div class="frow" style="margin-bottom:1rem">
+          <div class="fld span2">
+            <label class="flbl">School / Institution Name</label>
+            <input class="fc" type="text" id="schoolName" placeholder="e.g. St. Mary's Higher Secondary School">
+          </div>
+          <div class="fld">
+            <label class="flbl">Enquiry Reference No. <span style="font-weight:400;color:var(--teal);font-size:10px">(auto-generated)</span></label>
+            <input class="fc" type="text" id="enquiryRef" readonly style="color:var(--teal);font-family:var(--fm);font-size:13px;cursor:default;background:rgba(0,229,204,.06);border-color:rgba(0,229,204,.3)">
+          </div>
+        </div>
+        <label class="flbl">Customer Category</label>
+        <div class="cat-wrap">
+          <div class="cpill" onclick="pickCat('KG',this)">KG</div>
+          <div class="cpill" onclick="pickCat('LP',this)">LP</div>
+          <div class="cpill" onclick="pickCat('UP',this)">UP</div>
+          <div class="cpill" onclick="pickCat('HS',this)">HS</div>
+          <div class="cpill" onclick="pickCat('HSS',this)">HSS</div>
+          <div class="cpill" onclick="pickCat('CLG',this)">CLG</div>
+        </div>
+        <p class="info" style="margin-bottom:1rem">KG = Kinder Garten &middot; LP = Lower Primary &middot; UP = Upper Primary &middot; HS = High School &middot; HSS = Higher Secondary &middot; CLG = College</p>
+        <div class="frow c2">
+          <div class="fld"><label class="flbl">No. of Students</label><input class="fc" type="number" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value==='')this.value='0'" id="numStudents" min="0" value="0" placeholder="e.g. 45"></div>
+          <div class="fld"><label class="flbl">No. of Staffs</label><input class="fc" type="number" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value==='')this.value='0'" id="numStaffs" min="0" value="0" placeholder="e.g. 5"></div>
+          <div class="fld"><label class="flbl">Trip Duration (Days)</label>
+          <div class="stpr">
+            <button type="button" class="stpr-btn" onclick="stAdj('numDays',-1,1,30)"><i class="fa-solid fa-minus"></i></button>
+            <input type="number" id="numDays" value="1" min="1" max="30" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value===''||parseInt(this.value)<1)this.value='1'">
+            <button type="button" class="stpr-btn" onclick="stAdj('numDays',1,1,30)"><i class="fa-solid fa-plus"></i></button>
+          </div></div>
+          <div class="fld"><label class="flbl">No. of Nights</label>
+          <div class="stpr">
+            <button type="button" class="stpr-btn" onclick="stAdj('numNights',-1,0,30)"><i class="fa-solid fa-minus"></i></button>
+            <input type="number" id="numNights" value="0" min="0" max="30" onfocus="if(this.value=='0')this.value=''" onblur="if(this.value==='')this.value='0'">
+            <button type="button" class="stpr-btn" onclick="stAdj('numNights',1,0,30)"><i class="fa-solid fa-plus"></i></button>
+          </div></div>
+        </div>
+      </div>
+      <div class="cft">
+        <span class="cft-note">Fill all required fields to continue</span>
+        <button class="btn-nx" onclick="goNext(0)"><i class="fa-solid fa-arrow-right"></i> Continue</button>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="card" id="card-1">
+      <div class="chd">
+        <div class="cicon ic-vio"><i class="fa-solid fa-bus" style="color:#c4b5fd"></i></div>
+        <div><div class="cttl">Vehicle Selection</div><div class="csub">Pick vehicle types — add multiple if needed</div></div>
+        <div class="cbadge" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.25);color:#c4b5fd">STEP 02</div>
+      </div>
+      <div class="cbody">
+        <label class="flbl">Select Vehicle Category</label>
+        <div class="vtg">
+          <button class="vtile" onclick="openVP('BUS')"><div class="vtplus"><i class="fa-solid fa-plus"></i></div><div class="vti"><i class="fa-solid fa-bus"></i></div><div class="vtn">Bus</div><div class="vts">36 &ndash; 55 Seater</div></button>
+          <button class="vtile" onclick="openVP('TRAVELLER')"><div class="vtplus"><i class="fa-solid fa-plus"></i></div><div class="vti"><i class="fa-solid fa-van-shuttle"></i></div><div class="vtn">Traveller</div><div class="vts">24 &ndash; 30 Seater</div></button>
+        </div>
+        <div id="fleetWrap" style="display:none">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
+            <span class="slbl" style="margin:0">Your Fleet</span>
+            <button class="btn-add" onclick="openVP(null)"><i class="fa-solid fa-plus"></i> Add Another</button>
+          </div>
+          <div id="fleetRows"></div>
+        </div>
+        <p class="info">&#8226; First 100 KM/day included &nbsp;&#8226;&nbsp; 80 KM city run added automatically each day</p>
+      </div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(1)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(1)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="card" id="card-2">
+      <div class="chd">
+        <div class="cicon ic-gold"><i class="fa-solid fa-map-location-dot" style="color:var(--gold)"></i></div>
+        <div><div class="cttl">Day-wise Itinerary</div><div class="csub">Destinations, KM &amp; tourist spots with entry fees</div></div>
+        <div class="cbadge" style="background:rgba(249,199,79,.1);border:1px solid rgba(249,199,79,.25);color:var(--gold)">STEP 03</div>
+      </div>
+      <div class="cbody" id="itinBody"><div class="empty"><i class="fa-solid fa-map" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>Will load after completing Step 1</div></div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(2)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(2)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 4 -->
+    <div class="card" id="card-3">
+      <div class="chd">
+        <div class="cicon ic-mint"><i class="fa-solid fa-hotel" style="color:var(--mint)"></i></div>
+        <div><div class="cttl">Accommodation</div><div class="csub">Night-wise room sharing — toggle to skip any night</div></div>
+        <div class="cbadge" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);color:var(--mint)">STEP 04</div>
+      </div>
+      <div class="cbody" id="accomBody"><div class="empty"><i class="fa-solid fa-bed" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>Will load after completing Step 1</div></div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(3)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(3)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 5 -->
+    <div class="card" id="card-4">
+      <div class="chd">
+        <div class="cicon ic-sky"><i class="fa-solid fa-shower" style="color:var(--sky)"></i></div>
+        <div><div class="cttl">Fresh-ups</div><div class="csub">Day-wise refreshment stops — select time slots</div></div>
+        <div class="cbadge" style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:var(--sky)">STEP 05</div>
+      </div>
+      <div class="cbody" id="freshBody"><div class="empty"><i class="fa-solid fa-shower" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>Will load after completing Step 1</div></div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(4)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(4)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 6 -->
+    <div class="card" id="card-5">
+      <div class="chd">
+        <div class="cicon ic-ora"><i class="fa-solid fa-utensils" style="color:var(--ora)"></i></div>
+        <div><div class="cttl">Meal Plan</div><div class="csub">Day-wise food selection with Veg / Non-Veg preference</div></div>
+        <div class="cbadge" style="background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.25);color:var(--ora)">STEP 06</div>
+      </div>
+      <div class="cbody" id="mealsBody"><div class="empty"><i class="fa-solid fa-utensils" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>Will load after completing Step 1</div></div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(5)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(5)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 7 -->
+    <div class="card" id="card-6">
+      <div class="chd">
+        <div class="cicon ic-pink"><i class="fa-solid fa-star" style="color:var(--pink)"></i></div>
+        <div><div class="cttl">Entertainment &amp; Extra Charges</div><div class="csub">Events &amp; day-wise extras — Guide, Tolls, Bata, RTO</div></div>
+        <div class="cbadge" style="background:rgba(244,114,182,.1);border:1px solid rgba(244,114,182,.25);color:var(--pink)">STEP 07</div>
+      </div>
+      <div class="cbody">
+        <p class="slbl"><i class="fa-solid fa-star" style="color:var(--pink);margin-right:6px"></i>Entertainments — Cost &times; No. of Vehicles</p>
+        <div class="entg" style="margin-bottom:1.4rem">
+          <label class="eitem" id="ent_campfire">
+            <input type="checkbox" id="cb_campfire" onchange="this.closest('.eitem').classList.toggle('on',this.checked)">
+            <div class="eicon"><i class="fa-solid fa-fire" style="color:var(--ora)"></i></div>
+            <div><div class="en">Campfire</div><div class="ec">&#8377;3,000 per vehicle</div></div>
+          </label>
+          <label class="eitem" id="ent_dj">
+            <input type="checkbox" id="cb_dj" onchange="this.closest('.eitem').classList.toggle('on',this.checked)">
+            <div class="eicon"><i class="fa-solid fa-headphones" style="color:var(--pink)"></i></div>
+            <div><div class="en">DJ Party</div><div class="ec">&#8377;4,000 per vehicle</div></div>
+          </label>
+        </div>
+        <div class="divider"></div>
+        <p class="slbl"><i class="fa-solid fa-briefcase" style="color:var(--coral);margin-right:6px"></i>Extra Charges — Day-wise Selection</p>
+        <div id="extrasBody"><div class="empty" style="padding:1rem 0">Will load after completing Step 1</div></div>
+      </div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(6)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(6)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 8 — KM BREAKDOWN -->
+    <div class="card" id="card-7">
+      <div class="chd">
+        <div class="cicon ic-sky"><i class="fa-solid fa-road" style="color:var(--sky)"></i></div>
+        <div><div class="cttl">KM Breakdown</div><div class="csub">Day-wise distance segments — Yard to Yard</div></div>
+        <div class="cbadge" style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:var(--sky)">STEP 08</div>
+      </div>
+      <div class="cbody" id="kmBody"><div class="empty"><i class="fa-solid fa-road" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>Will load after completing Step 1</div></div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(7)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <button class="btn-nx" onclick="goNext(7)">Continue <i class="fa-solid fa-arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 9 — REVIEW & CALCULATE -->
+    <div class="card" id="card-8">
+      <div class="chd">
+        <div class="cicon ic-coral"><i class="fa-solid fa-calculator" style="color:var(--coral)"></i></div>
+        <div><div class="cttl">Review &amp; Calculate</div><div class="csub">Confirm details and generate the trip cost estimate</div></div>
+        <div class="cbadge" style="background:rgba(255,107,107,.1);border:1px solid rgba(255,107,107,.25);color:var(--coral)">STEP 09</div>
+      </div>
+      <div class="cbody">
+        <div id="reviewGrid" class="frow c2" style="margin-bottom:1.4rem"></div>
+        <div class="divider"></div>
+        <p class="info" style="margin-bottom:1rem">All steps saved. Click below to compute the full cost breakdown.</p>
+        <button class="btn-calc" onclick="calculate()"><i class="fa-solid fa-wand-magic-sparkles"></i> Generate Trip Cost Estimate</button>
+      </div>
+      <div class="cft">
+        <button class="btn-bk" onclick="goPrev(8)"><i class="fa-solid fa-arrow-left"></i> Back</button>
+        <span class="cft-note">&#8377; Invoice will appear below</span>
+      </div>
+    </div>
+
+  </div><!-- /stage -->
+  <div class="invwrap" id="invWrap" style="display:none"><div id="invInner"></div></div>
+</div><!-- /shell -->
+
+<script>
+/* RIPPLE */
+(()=>{
+  const cv=document.getElementById('rc'),ctx=cv.getContext('2d');let W,H,rps=[];
+  const rsz=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight;};rsz();addEventListener('resize',rsz);
+  window.spawnRipple=(x,y,c)=>rps.push({x,y,r:0,max:Math.max(W,H)*1.2,a:.55,c});
+  (function loop(){
+    ctx.clearRect(0,0,W,H);rps=rps.filter(p=>p.a>0);
+    rps.forEach(p=>{
+      const g=ctx.createRadialGradient(p.x,p.y,p.r*.2,p.x,p.y,p.r);
+      const hex=Math.round(p.a*255).toString(16).padStart(2,'0');
+      g.addColorStop(0,p.c.replace('XX',hex));g.addColorStop(.6,p.c.replace('XX','18'));g.addColorStop(1,'transparent');
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();
+      p.r+=p.max/42;p.a-=.022;
+    });
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* RATE CARD DATA */
+const DEFAULT_RC={
+  vehicles:{
+    'BUS 55 Seater':      {basic:10000,perKm:40,minKm:100,runKm:80},
+    'BUS 49 Seater':      {basic:9000, perKm:40,minKm:100,runKm:80},
+    'BUS 42 Seater':      {basic:8000, perKm:40,minKm:100,runKm:80},
+    'BUS 36 Seater':      {basic:7000, perKm:40,minKm:100,runKm:80},
+    'TRAVELLER 30 Seater':{basic:7500, perKm:35,minKm:100,runKm:80},
+    'TRAVELLER 26 Seater':{basic:7000, perKm:35,minKm:100,runKm:80},
+    'TRAVELLER 24 Seater':{basic:6000, perKm:35,minKm:100,runKm:80},
+  },
+  roomRent:{'5':{KG:300,LP:350,UP:500,HS:700,HSS:800,CLG:1000},'4':{KG:350,LP:400,UP:600,HS:800,HSS:900,CLG:1200},'3':{KG:400,LP:450,UP:700,HS:900,HSS:1000,CLG:1400},'2':{KG:500,LP:600,UP:800,HS:1000,HSS:1200,CLG:1500},'1':{KG:700,LP:800,UP:1000,HS:1200,HSS:1500,CLG:2000}},
+  freshup:{'5':{KG:100,LP:150,UP:200,HS:250,HSS:300,CLG:400},'4':{KG:150,LP:200,UP:250,HS:300,HSS:350,CLG:500},'3':{KG:200,LP:250,UP:300,HS:350,HSS:400,CLG:600},'2':{KG:300,LP:350,UP:400,HS:450,HSS:500,CLG:700},'1':{KG:500,LP:550,UP:600,HS:650,HSS:700,CLG:800}},
+  foodNV:{bf:{KG:100,LP:125,UP:150,HS:175,HSS:200,CLG:225},lunch:{KG:150,LP:175,UP:200,HS:225,HSS:250,CLG:275},tea:{KG:60,LP:60,UP:60,HS:60,HSS:60,CLG:60},dinner:{KG:150,LP:175,UP:200,HS:225,HSS:250,CLG:275}},
+  foodVeg:{bf:{KG:75,LP:100,UP:125,HS:150,HSS:175,CLG:200},lunch:{KG:150,LP:175,UP:200,HS:225,HSS:250,CLG:275},tea:{KG:50,LP:50,UP:50,HS:50,HSS:50,CLG:50},dinner:{KG:150,LP:175,UP:200,HS:225,HSS:250,CLG:275}},
+  entryFee:{'Tea Museum':{KG:30,LP:40,UP:50,HS:80,HSS:100,CLG:130},'Mattuppetty Dam':{KG:30,LP:40,UP:50,HS:80,HSS:100,CLG:130},'Rose Garden':{KG:50,LP:50,UP:50,HS:75,HSS:75,CLG:100},'Rajamala':{KG:80,LP:90,UP:100,HS:130,HSS:150,CLG:200},'Thekkady Lake':{KG:0,LP:0,UP:0,HS:0,HSS:0,CLG:0}},
+  entertainment:{Campfire:3000,'DJ Party':4000},
+  extra:{Guide:7500,Tolls:2000,Bata:2000,RTO:3000},
+  profit:.20,
+};
+let RC=JSON.parse(JSON.stringify(DEFAULT_RC));
+
+/* FORMULA DATA */
+const DEFAULT_FORMULAS={
+  vehicle:{label:'Vehicle Cost',icon:'fa-bus',color:'#a78bfa',desc:'Total vehicle cost using all KM segments: Day 0 (Yard→Start→Dest), itinerary days, and Night N (Dest→End→Yard).',formula:'(Math.max(0, totalKM - (minKm*numDays)) * perKmCharge + (numDays * basicRent)) * numVehicles',vars:[{name:'totalKM',chip:'va',desc:'Sum of ALL km segments: Day 0 + all itinerary days + Night N return',sample:480},{name:'minKm',chip:'vc',desc:'Minimum free KM per day (from rate card)',sample:100},{name:'numDays',chip:'vo',desc:'Number of trip days',sample:2},{name:'perKmCharge',chip:'vc',desc:'Per-KM charge beyond free limit',sample:40},{name:'basicRent',chip:'vc',desc:'Basic daily rent per vehicle',sample:10000},{name:'numVehicles',chip:'vo',desc:'Count of vehicles of this type',sample:2}],note:'chargeableKM = max(0, totalKM − minKm×days). City run KM is now entered directly in Day 0 (Start→Dest) and Night N segments. Cost = (chargeableKM × perKM) + (days × basicRent), multiplied by vehicle count.'},
+  room:{label:'Room Rent',icon:'fa-hotel',color:'#34d399',desc:'Cost for one sharing-type row for a single night.',formula:'ratePerHead*sharingSize*numRooms',vars:[{name:'ratePerHead',chip:'vc',desc:'Per-student nightly rate',sample:500},{name:'sharingSize',chip:'va',desc:'Persons per room',sample:5},{name:'numRooms',chip:'vo',desc:'Number of rooms',sample:4}],note:'Rate per person \u00D7 room capacity \u00D7 number of rooms.'},
+  freshup:{label:'Fresh-up Cost',icon:'fa-shower',color:'#22d3ee',desc:'Cost for one sharing-type row for a single fresh-up session.',formula:'ratePerHead*sharingSize*numRooms',vars:[{name:'ratePerHead',chip:'vc',desc:'Per-student fresh-up rate for this sharing type',sample:200},{name:'sharingSize',chip:'va',desc:'Number of persons sharing (e.g. 5 for 5-sharing)',sample:5},{name:'numRooms',chip:'vo',desc:'Number of rooms/batches booked',sample:2}],note:'Same logic as room rent: rate per head × sharing size × number of rooms. Each row calculated independently.'},
+  entry:{label:'Entry Fee',icon:'fa-ticket',color:'#fbbf24',desc:'Entry cost for one tourist location on one day.',formula:'(studentRate*numStudents)+(staffRate*numStaffs)',vars:[{name:'studentRate',chip:'vc',desc:'Entry fee per student (their category)',sample:50},{name:'numStudents',chip:'vo',desc:'Number of students',sample:45},{name:'staffRate',chip:'vc',desc:'Entry fee per staff (CLG rate)',sample:130},{name:'numStaffs',chip:'vo',desc:'Number of staffs',sample:5}],note:'Staffs always billed at CLG rate.'},
+  food:{label:'Meal Cost',icon:'fa-utensils',color:'#fb923c',desc:'Cost for one meal on a single day.',formula:'ratePerHead*totalPax',vars:[{name:'ratePerHead',chip:'vc',desc:'Per-person meal rate',sample:150},{name:'totalPax',chip:'vo',desc:'Students + Staffs',sample:50}],note:'Calculated per meal per day.'},
+  entertainment:{label:'Entertainment',icon:'fa-star',color:'#f472b6',desc:'Cost for one entertainment event.',formula:'costPerEvent*numVehicles',vars:[{name:'costPerEvent',chip:'vc',desc:'Fixed cost per vehicle',sample:3000},{name:'numVehicles',chip:'vo',desc:'Total vehicle count',sample:2}],note:'Event cost scales with total vehicle count.'},
+  extra:{label:'Extra Charges',icon:'fa-briefcase',color:'#f87171',desc:'Cost for one extra item per day.',formula:'costPerDay',vars:[{name:'costPerDay',chip:'vc',desc:'Fixed daily cost from rate card',sample:7500}],note:'No per-person or per-vehicle multiplier.'},
+  grandtotal:{label:'Grand Total',icon:'fa-calculator',color:'#4facfe',desc:'Final trip cost after profit margin.',formula:'subtotal*(1+profitPct/100)',vars:[{name:'subtotal',chip:'vg',desc:'Sum of all components',sample:125000},{name:'profitPct',chip:'va',desc:'Profit percentage',sample:20}],note:'Profit applied once on total.'},
+  perhead:{label:'Per Head Cost',icon:'fa-person',color:'#a78bfa',desc:'Final cost per student.',formula:'grandTotal/numStudents',vars:[{name:'grandTotal',chip:'vg',desc:'Total trip cost with profit',sample:150000},{name:'numStudents',chip:'vo',desc:'Number of students',sample:45}],note:'Staffs excluded from per-head.'},
+};
+let LF=JSON.parse(JSON.stringify(DEFAULT_FORMULAS));
+
+function evalFml(key,vars){
+  try{const n=Object.keys(vars),v=Object.values(vars),e=LF[key].formula,fn=new Function(...n,'return('+e+');'),r=fn(...v);return(isNaN(r)||!isFinite(r))?0:r;}catch(e){console.warn(key,e.message);return 0;}
+}
+function valFml(expr,vars){
+  try{const n=Object.keys(vars),v=Object.values(vars),fn=new Function(...n,'return('+expr+');'),r=fn(...v);if(isNaN(r)||!isFinite(r))return{ok:false,msg:'NaN/Infinity'};return{ok:true,result:r};}catch(e){return{ok:false,msg:e.message};}
+}
+
+/* WIZARD STATE */
+let step=0,cat='',planBuilt=false,roomCtr={};
+const STEPS=[
+  {icon:'fa-school',         col:'var(--teal)', lbl:'Basic Info'},
+  {icon:'fa-bus',            col:'#c4b5fd',     lbl:'Vehicle'},
+  {icon:'fa-map-location-dot',col:'var(--gold)',lbl:'Itinerary'},
+  {icon:'fa-hotel',          col:'var(--mint)', lbl:'Accommodation'},
+  {icon:'fa-shower',         col:'var(--sky)',  lbl:'Fresh-ups'},
+  {icon:'fa-utensils',       col:'var(--ora)',  lbl:'Meals'},
+  {icon:'fa-star',           col:'var(--pink)', lbl:'Entertain.'},
+  {icon:'fa-road',           col:'var(--sky)',  lbl:'KM Breakdown'},
+  {icon:'fa-calculator',     col:'var(--coral)',lbl:'Calculate'},
+];
+const DESTS={Munnar:['Tea Museum','Mattuppetty Dam','Rose Garden'],Thekkady:['Rajamala','Thekkady Lake']};
+const CATL={KG:'Kinder Garten',LP:'Lower Primary',UP:'Upper Primary',HS:'High School',HSS:'Higher Secondary',CLG:'College'};
+const DBC=['db0','db1','db2','db3'];
+let fleetList=[],vpSel=null;
+
+function fmt(n){return '\u20B9'+Math.round(n).toLocaleString('en-IN');}
+function dbc(i){return DBC[i%4];}
+function nv(id){return parseInt(document.getElementById(id)?.value)||0;}
+
+/* PROGRESS */
+function buildProg(){
+  let h='';
+  STEPS.forEach((s,i)=>{
+    if(i>0)h+=`<div class="pline${i<=step?' done':''}" id="pl${i}"></div>`;
+    const st=i<step?'done':i===step?'active':'';
+    h+=`<div class="ps ${st}" id="ps${i}" onclick="jumpTo(${i})"><div class="pd"><i class="fa-solid ${i<step?'fa-check':s.icon}" style="color:${i<=step?'#fff':s.col}"></i></div><div class="pll">${s.lbl}</div></div>`;
+  });
+  document.getElementById('progTrack').innerHTML=h;
+}
+function updProg(){
+  document.getElementById('stepNum').textContent=step+1;
+  STEPS.forEach((_,i)=>{
+    const ps=document.getElementById('ps'+i);if(!ps)return;
+    ps.className='ps '+(i<step?'done':i===step?'active':'');
+    const ic=ps.querySelector('i');ic.className='fa-solid '+(i<step?'fa-check':STEPS[i].icon);ic.style.color=i<=step?'#fff':STEPS[i].col;
+    const pl=document.getElementById('pl'+i);if(pl)pl.className='pline'+(i<=step?' done':'');
+  });
+}
+function jumpTo(t){if(t>=step)return;doTrans(t,'back');}
+
+/* TRANSITION */
+function doTrans(target,dir){
+  const from=document.getElementById('card-'+step),to=document.getElementById('card-'+target);
+  const cols=['#00e5ccXX','#8b5cf6XX','#f9c74fXX','#34d399XX','#f472b6XX'];
+  spawnRipple(innerWidth/2,innerHeight/2,cols[target%cols.length]);
+  const ec=dir==='forward'?'eout-l':'eout-r',en=dir==='forward'?'ein-r':'ein-l';
+  from.classList.remove('cur');from.style.position='absolute';from.classList.add(ec);
+  to.style.position='relative';to.classList.add(en,'cur');to.style.opacity='';to.style.pointerEvents='';
+  step=target;updProg();
+  setTimeout(()=>{from.classList.remove(ec);from.style.position='absolute';from.style.opacity='0';from.style.pointerEvents='none';to.classList.remove(en);to.style.position='relative';},560);
+  scrollTo({top:0,behavior:'smooth'});
+}
+
+function goNext(from){
+  if(from===0){if(!valS0())return;buildDynamic();}
+  if(from===1&&!fleetList.length){alert('Please add at least one vehicle.');return;}
+  if(from===6){buildKMBreakdown();}
+  if(from===8)return;
+  doTrans(from+1,'forward');
+  if(from+1===8)buildReview();
+}
+function goPrev(from){if(from>0)doTrans(from-1,'back');}
+
+function valS0(){
+  if(!cat){alert('Please select a customer category.');return false;}
+  if(!nv('numStudents')){alert('Please enter number of students.');return false;}
+  if(!nv('numDays')){alert('Please enter trip duration in days.');return false;}
+  return true;
+}
+function pickCat(c,el){cat=c;document.querySelectorAll('.cpill').forEach(p=>p.classList.remove('active'));el.classList.add('active');}
+
+function buildDynamic(){
+  if(planBuilt)return;
+  const d=nv('numDays'),n=nv('numNights');
+  genItin(d);genAccom(n);genFresh(d);genMeals(d);genExtras(d);
+  planBuilt=true;
+}
+
+function buildReview(){
+  const fs=fleetList.length?fleetList.map(f=>f.count+'\u00D7 '+f.name).join(', '):'None';
+  const items=[['Institution',document.getElementById('schoolName').value||'\u2014'],['Category',CATL[cat]||cat],['Students',nv('numStudents')],['Staffs',nv('numStaffs')],['Duration',nv('numDays')+'D / '+nv('numNights')+'N'],['Fleet',fs],['Ref',document.getElementById('enquiryRef').value||'\u2014'],['Rate Card','RC v1.0']];
+  document.getElementById('reviewGrid').innerHTML=items.map(([l,v])=>`<div style="background:var(--g2);border:1px solid var(--b);border-radius:var(--r12);padding:12px 15px"><div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);margin-bottom:3px">${l}</div><div style="font-size:14px;font-weight:700">${v}</div></div>`).join('');
+}
+
+/* ITINERARY */
+function genItin(days){
+  let h='';
+  for(let d=1;d<=days;d++){
+    h+=`<div class="dc">
+      <div class="dchd"><div class="dbadge ${dbc(d-1)}">Day ${d}</div><span style="font-size:13px;color:var(--t2)">Destination &amp; Spots</span></div>
+      <label class="flbl">Search Destination</label>
+      <div class="dest-search-wrap">
+        <input class="dest-search-inp" type="text" id="dest_inp_${d}"
+          placeholder="Type destination name (e.g. Munnar, Thekkady…)"
+          autocomplete="off"
+          oninput="destSuggest(${d},this.value)"
+          onfocus="destSuggest(${d},this.value)"
+          onkeydown="destKeyNav(event,${d})">
+        <i class="fa-solid fa-magnifying-glass dest-search-icon"></i>
+        <button class="dest-search-clr" onclick="destClear(${d})" tabindex="-1"><i class="fa-solid fa-xmark"></i></button>
+        <div class="dest-sugg-box" id="destSuggBox${d}"></div>
+        <input type="hidden" id="dest_d${d}" value="">
+      </div>
+      <div id="dest_badge${d}"></div>
+      <div id="locs_d${d}"></div>
+    </div>`;
+  }
+  document.getElementById('itinBody').innerHTML=h;
+}
+
+function destSuggest(d,q){
+  const box=document.getElementById('destSuggBox'+d);
+  if(!box)return;
+  const qTrim=q.trim().toLowerCase();
+  // Show all if empty focus, filter by first letter / contains on input
+  const matches=DEST_DATA.filter(x=>qTrim===''||x.lbl.toLowerCase().startsWith(qTrim)||x.lbl.toLowerCase().includes(qTrim));
+  if(!matches.length){box.classList.remove('open');return;}
+  box.innerHTML=matches.map((x,i)=>`
+    <div class="dest-sugg-item" tabindex="0" data-idx="${i}" data-val="${x.val}"
+      onmousedown="destPick(${d},'${x.val}','${x.lbl}',event)"
+      onkeydown="if(event.key==='Enter')destPick(${d},'${x.val}','${x.lbl}',event)">
+      <div class="dest-sugg-icon"><i class="fa-solid ${x.icon}"></i></div>
+      <div>
+        <div class="dest-sugg-name">${highlightMatch(x.lbl,q)}</div>
+        <div class="dest-sugg-sub">${x.sub}</div>
+      </div>
+    </div>`).join('');
+  box.classList.add('open');
+}
+
+function highlightMatch(text,q){
+  if(!q.trim())return text;
+  const re=new RegExp('('+q.trim().replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
+  return text.replace(re,'<mark style="background:rgba(249,199,79,.3);color:var(--gold);border-radius:3px;padding:0 2px">$1</mark>');
+}
+
+function destPick(d,val,lbl,e){
+  if(e)e.preventDefault();
+  const inp=document.getElementById('dest_inp_'+d);
+  const hid=document.getElementById('dest_d'+d);
+  const box=document.getElementById('destSuggBox'+d);
+  if(inp){inp.value=lbl;inp.classList.add('has-val');}
+  if(hid)hid.value=val;
+  if(box)box.classList.remove('open');
+  // show selected badge
+  const badge=document.getElementById('dest_badge'+d);
+  if(badge){
+    const dd=DEST_DATA.find(x=>x.val===val);
+    badge.innerHTML=dd?`<div class="dest-selected-badge"><i class="fa-solid ${dd.icon}"></i>${dd.lbl}</div>`:'';
+  }
+  renderLocs(d);
+}
+
+function destClear(d){
+  const inp=document.getElementById('dest_inp_'+d);
+  const hid=document.getElementById('dest_d'+d);
+  const box=document.getElementById('destSuggBox'+d);
+  const badge=document.getElementById('dest_badge'+d);
+  const locs=document.getElementById('locs_d'+d);
+  if(inp){inp.value='';inp.classList.remove('has-val');inp.focus();}
+  if(hid)hid.value='';
+  if(box)box.classList.remove('open');
+  if(badge)badge.innerHTML='';
+  if(locs)locs.innerHTML='';
+}
+
+function destKeyNav(e,d){
+  const box=document.getElementById('destSuggBox'+d);
+  if(!box?.classList.contains('open'))return;
+  const items=[...box.querySelectorAll('.dest-sugg-item')];
+  const active=box.querySelector('.dest-sugg-item:focus');
+  if(e.key==='ArrowDown'){e.preventDefault();(active?active.nextElementSibling||items[0]:items[0])?.focus();}
+  else if(e.key==='ArrowUp'){e.preventDefault();(active?active.previousElementSibling||items[items.length-1]:items[items.length-1])?.focus();}
+  else if(e.key==='Escape'){box.classList.remove('open');}
+}
+
+// Close suggestion boxes on outside click
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.dest-sugg-box.open').forEach(b=>{
+    if(!b.closest('.dest-search-wrap').contains(e.target))b.classList.remove('open');
+  });
+});
+
+function renderLocs(d){
+  const hid=document.getElementById('dest_d'+d);
+  const dest=hid?.value||'';
+  const box=document.getElementById('locs_d'+d);if(!box)return;
+  if(!dest){box.innerHTML='';return;}
+  const locs=DESTS[dest];
+  if(!locs||!locs.length){box.innerHTML='';return;}
+  let h=`<label class="flbl" style="margin-bottom:8px;margin-top:4px">Tourist Spots in ${dest} <span style="font-weight:400;color:var(--t3)">(select applicable)</span></label><div class="locgrid">`;
+  locs.forEach(loc=>{
+    const hasF=Object.values(RC.entryFee[loc]||{}).some(v=>v>0);
+    h+=`<label class="locitem">
+      <input type="checkbox" value="${loc}" onchange="this.closest('.locitem').classList.toggle('on',this.checked)"><span class="ldot"></span>
+      <span style="flex:1;font-family:var(--fh);font-size:13px;font-weight:600">${loc}</span>
+      <span style="font-size:10px;color:var(--t3)">${hasF?'entry':'free'}</span>
+    </label>`;
+  });
+  box.innerHTML=h+'</div>';
+}
+
+/* ACCOMMODATION */
+function genAccom(nights){
+  if(!nights){document.getElementById('accomBody').innerHTML='<div class="empty"><i class="fa-solid fa-moon" style="font-size:2rem;display:block;margin-bottom:.5rem;color:var(--t3)"></i>0 nights \u2014 no accommodation needed.</div>';return;}
+  let h='';
+  for(let n=1;n<=nights;n++){
+    h+=`<div class="dc" id="nc${n}"><div class="dchd"><div class="dbadge db2">Night ${n}</div><span style="font-size:13px;color:var(--t2)">Room sharing</span>
+    <div class="togwrap"><span style="font-size:11px;color:var(--t3)">Include</span><label class="tog"><input type="checkbox" id="ni${n}" checked><span class="togsl"></span></label></div></div>
+    <div class="mhd"><div>Sharing Type</div><div>No. of Rooms</div><div></div></div>
+    <div id="rrows${n}">${roomRow(n,0)}</div>
+    <button class="btn-add" onclick="addRoomRow(${n})"><i class="fa-solid fa-plus"></i> Add Sharing Type</button>
+    </div>`;
+    roomCtr[n]=1;
+  }
+  document.getElementById('accomBody').innerHTML=h;
+}
+function roomRow(n,idx){
+  const opts=['5','4','3','2','1'].map(s=>`<option value="${s}">${s} Sharing</option>`).join('');
+  return `<div class="mr" id="rr_${n}_${idx}">
+    <select class="fc" id="rsh_${n}_${idx}" style="padding:12px 14px;min-height:48px">${opts}</select>
+    <div class="stpr">
+      <button type="button" class="stpr-btn" onclick="stAdj('rc_${n}_${idx}',-1,0,999)"><i class="fa-solid fa-minus"></i></button>
+      <input type="number" id="rc_${n}_${idx}" value="0" min="0"
+        onfocus="if(this.value=='0')this.value=''"
+        onblur="if(this.value==='')this.value='0'">
+      <button type="button" class="stpr-btn" onclick="stAdj('rc_${n}_${idx}',1,0,999)"><i class="fa-solid fa-plus"></i></button>
+    </div>
+    <button class="btn-del" onclick="document.getElementById('rr_${n}_${idx}').remove()"><i class="fa-solid fa-trash-can"></i></button>
+  </div>`;
+}
+function addRoomRow(n){const idx=roomCtr[n]++;const d=document.createElement('div');d.innerHTML=roomRow(n,idx);document.getElementById('rrows'+n).appendChild(d.firstElementChild);}
+
+/* FRESH-UPS */
+const FU_SESS=[
+  {v:'Morning',  i:'fa-cloud-sun',  c:'var(--gold)'},
+  {v:'Afternoon',i:'fa-sun',        c:'var(--ora)'},
+  {v:'Evening',  i:'fa-cloud-moon', c:'var(--vio)'},
+  {v:'Night',    i:'fa-moon',       c:'var(--sky)'}
+];
+let fuCtr={};
+
+function fuRow(d,sess,idx){
+  const opts=['5','4','3','2','1'].map(s=>`<option value="${s}">${s} Sharing</option>`).join('');
+  const sid=sess.toLowerCase();
+  return `<div class="mr fu-session-row" id="fur_${d}_${sid}_${idx}">
+    <select class="fc" id="fu_sh_${d}_${sid}_${idx}" style="padding:12px 14px;min-height:48px;color:var(--t1);background:#0d0a22;border-color:var(--b)">${opts}</select>
+    <div class="stpr">
+      <button type="button" class="stpr-btn" onclick="stAdj('fu_rc_${d}_${sid}_${idx}',-1,0,999)"><i class="fa-solid fa-minus"></i></button>
+      <input type="number" id="fu_rc_${d}_${sid}_${idx}" value="0" min="0"
+        onfocus="if(this.value=='0')this.value=''"
+        onblur="if(this.value==='')this.value='0'">
+      <button type="button" class="stpr-btn" onclick="stAdj('fu_rc_${d}_${sid}_${idx}',1,0,999)"><i class="fa-solid fa-plus"></i></button>
+    </div>
+    <button class="btn-del" onclick="document.getElementById('fur_${d}_${sid}_${idx}').remove()"><i class="fa-solid fa-trash-can"></i></button>
+  </div>`;
+}
+function addFuRow(d,sess){
+  const sid=sess.toLowerCase();
+  const key=`${d}_${sid}`;
+  if(!fuCtr[key])fuCtr[key]=1;
+  const idx=fuCtr[key]++;
+  const wrap=document.getElementById('furows_'+d+'_'+sid);
+  if(!wrap)return;
+  const div=document.createElement('div');
+  div.innerHTML=fuRow(d,sess,idx);
+  wrap.appendChild(div.firstElementChild);
+}
+function accToggle(id){
+  const hdr=document.getElementById('acchdr_'+id);
+  const body=document.getElementById('accbody_'+id);
+  if(!hdr||!body)return;
+  const isOpen=hdr.classList.contains('open');
+  hdr.classList.toggle('open',!isOpen);
+  body.classList.toggle('open',!isOpen);
+}
+function genFresh(days){
+  let h='';
+  for(let d=1;d<=days;d++){
+    const isFirst=(d===1);
+    const sessBlocks=FU_SESS.map(s=>{
+      const sid=s.v.toLowerCase();
+      const key=`${d}_${sid}`;
+      fuCtr[key]=1;
+      return `<div style="border:1px solid rgba(255,255,255,.08);border-radius:var(--r12);margin-bottom:7px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:rgba(255,255,255,.05)">
+          <i class="fa-solid ${s.i}" style="color:${s.c};font-size:15px"></i>
+          <span style="font-family:var(--fh);font-weight:700;font-size:13px">${s.v}</span>
+        </div>
+        <div style="padding:10px 12px 12px">
+          <div class="mhd"><div>Sharing Type</div><div>No. of Rooms</div><div></div></div>
+          <div id="furows_${d}_${sid}">${fuRow(d,s.v,0)}</div>
+          <button class="btn-add" style="margin-top:7px;padding:8px 14px;font-size:12px" onclick="addFuRow(${d},'${s.v}')">
+            <i class="fa-solid fa-plus"></i> Add Row
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+    h+=`<div class="acc-day">
+      <div class="acc-hdr${isFirst?' open':''}" id="acchdr_fu${d}" onclick="accToggle('fu${d}')">
+        <div class="dbadge ${dbc(d-1)}">Day ${d}</div>
+        <span style="font-size:13px;color:var(--t2);font-family:var(--fh);font-weight:600">Fresh-up sessions</span>
+        <i class="fa-solid fa-chevron-down acc-chevron"></i>
+      </div>
+      <div class="acc-body${isFirst?' open':''}" id="accbody_fu${d}">
+        ${sessBlocks}
+      </div>
+    </div>`;
+  }
+  document.getElementById('freshBody').innerHTML=h;
+}
+
+/* MEALS */
+const MEALS=[{k:'bf',lbl:'Breakfast',i:'fa-regular fa-sun',c:'var(--gold)'},{k:'lunch',lbl:'Lunch',i:'fa-solid fa-bowl-food',c:'var(--ora)'},{k:'tea',lbl:'Tea & Snacks',i:'fa-solid fa-mug-hot',c:'var(--teal)'},{k:'dinner',lbl:'Dinner',i:'fa-solid fa-moon',c:'var(--vio)'}];
+function genMeals(days){
+  let h='';
+  for(let d=1;d<=days;d++){
+    h+=`<div class="dc" style="margin-bottom:.9rem"><div class="dchd"><div class="dbadge ${dbc(d-1)}">Day ${d}</div></div>
+    <div class="mgrid">${MEALS.map(m=>`<div class="mitem" id="mw_${d}_${m.k}">
+      <input type="checkbox" class="mchk" id="mc_${d}_${m.k}" onchange="document.getElementById('mw_${d}_${m.k}').classList.toggle('on',this.checked)">
+      <label class="mlbl" for="mc_${d}_${m.k}"><i class="${m.i}" style="color:${m.c};margin-right:7px"></i>${m.lbl}</label>
+      <div class="vt">
+        <input type="radio" name="vt_${d}_${m.k}" id="v_${d}_${m.k}" value="veg" checked><label class="vl" for="v_${d}_${m.k}">Veg</label>
+        <input type="radio" name="vt_${d}_${m.k}" id="nv_${d}_${m.k}" value="nv"><label class="nvl" for="nv_${d}_${m.k}">N.Veg</label>
+      </div>
+    </div>`).join('')}</div></div>`;
+  }
+  document.getElementById('mealsBody').innerHTML=h;
+}
+
+/* EXTRAS */
+const EXTS=[{k:'guide',i:'fa-solid fa-compass',c:'var(--sky)',n:'Guide',cost:'7,500/day'},{k:'tolls',i:'fa-solid fa-road',c:'var(--mint)',n:'Tolls',cost:'2,000/day'},{k:'bata',i:'fa-solid fa-hand-holding-heart',c:'var(--pink)',n:'Bata',cost:'2,000/day'},{k:'rto',i:'fa-solid fa-clipboard-list',c:'var(--gold)',n:'RTO',cost:'3,000/day'}];
+function genExtras(days){
+  let h='';
+  for(let d=1;d<=days;d++){
+    h+=`<div class="dc" style="margin-bottom:.9rem"><div class="dchd"><div class="dbadge ${dbc(d-1)}">Day ${d}</div><span style="font-size:13px;color:var(--t2)">Applicable extras</span></div>
+    <div class="extg">${EXTS.map(e=>`<label class="xitem">
+      <input type="checkbox" id="ex_${d}_${e.k}" onchange="this.closest('.xitem').classList.toggle('on',this.checked)">
+      <div class="xi"><i class="${e.i}" style="color:${e.c}"></i></div>
+      <div class="xn">${e.n}</div>
+      <div class="xc">&#8377;${e.cost}</div>
+    </label>`).join('')}</div></div>`;
+  }
+  document.getElementById('extrasBody').innerHTML=h;
+}
+
+/* VEHICLE PICKER */
+const VC={
+  BUS:[{name:'BUS 55 Seater',seats:55,basic:10000,perKm:40},{name:'BUS 49 Seater',seats:49,basic:9000,perKm:40},{name:'BUS 42 Seater',seats:42,basic:8000,perKm:40},{name:'BUS 36 Seater',seats:36,basic:7000,perKm:40}],
+  TRAVELLER:[{name:'TRAVELLER 30 Seater',seats:30,basic:7500,perKm:35},{name:'TRAVELLER 26 Seater',seats:26,basic:7000,perKm:35},{name:'TRAVELLER 24 Seater',seats:24,basic:6000,perKm:35}],
+};
+function openVP(type){
+  vpSel=null;
+  const ic=document.getElementById('vpIcon'),tt=document.getElementById('vpTitle');
+  if(type==='BUS'){ic.innerHTML='<i class="fa-solid fa-bus"></i>';tt.textContent='Choose Bus Capacity';}
+  else if(type==='TRAVELLER'){ic.innerHTML='<i class="fa-solid fa-van-shuttle"></i>';tt.textContent='Choose Traveller Capacity';}
+  else{ic.innerHTML='<i class="fa-solid fa-truck-fast"></i>';tt.textContent='Add a Vehicle';}
+  const types=type?[type]:['BUS','TRAVELLER'];
+  let h='<div class="vpopts">';
+  types.forEach(t=>VC[t].forEach(v=>{
+    h+=`<button class="vpopt" onclick="selVP('${v.name}',this)"><span class="vpseats">${t==='BUS'?'Bus':'Traveller'} ${v.seats} Seater</span><span class="vpprice">&#8377;${v.basic.toLocaleString('en-IN')}/day &middot; &#8377;${v.perKm}/km</span><span class="vpchk"><i class="fa-solid fa-check"></i></span></button>`;
+  }));
+  h+=`</div><button class="vpconfirm" id="vpConf" onclick="confVP()" disabled><i class="fa-solid fa-plus"></i> Add to Fleet</button>`;
+  document.getElementById('vpBody').innerHTML=h;
+  document.getElementById('vpBd').classList.add('open');
+  document.getElementById('vpModal').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function selVP(name,el){document.querySelectorAll('.vpopt').forEach(o=>o.classList.remove('sel'));el.classList.add('sel');vpSel=name;document.getElementById('vpConf').disabled=false;}
+function confVP(){
+  if(!vpSel)return;
+  const ex=fleetList.find(f=>f.name===vpSel);
+  if(ex)ex.count++;else fleetList.push({name:vpSel,count:1,type:vpSel.startsWith('BUS')?'BUS':'TRAVELLER'});
+  closeVP();renderFleet();
+}
+function closeVP(){document.getElementById('vpBd').classList.remove('open');document.getElementById('vpModal').classList.remove('open');document.body.style.overflow='';vpSel=null;}
+function adjFleet(name,d){const f=fleetList.find(x=>x.name===name);if(!f)return;f.count=Math.max(1,f.count+d);document.getElementById('fc_'+name.replace(/\s/g,'_')).textContent=f.count;}
+function delFleet(name){fleetList=fleetList.filter(f=>f.name!==name);renderFleet();}
+function renderFleet(){
+  const w=document.getElementById('fleetWrap'),r=document.getElementById('fleetRows');
+  if(!fleetList.length){w.style.display='none';return;}
+  w.style.display='block';
+  r.innerHTML=fleetList.map(f=>{const isBus=f.type==='BUS',vr=RC.vehicles[f.name]||{},id=f.name.replace(/\s/g,'_');
+    return`<div class="fleet-row"><div class="frt ${isBus?'bus':'trav'}"><i class="fa-solid ${isBus?'fa-bus':'fa-van-shuttle'}"></i></div>
+    <div class="fri"><div class="frn">${f.name}</div><div class="frm">&#8377;${(vr.basic||0).toLocaleString('en-IN')}/day &middot; &#8377;${vr.perKm||0}/km</div></div>
+    <div class="frc"><button class="fcb" onclick="adjFleet('${f.name}',-1)"><i class="fa-solid fa-minus"></i></button><div class="fcv" id="fc_${id}">${f.count}</div><button class="fcb" onclick="adjFleet('${f.name}',1)"><i class="fa-solid fa-plus"></i></button></div>
+    <button class="btn-x" onclick="delFleet('${f.name}')"><i class="fa-solid fa-trash-can"></i></button></div>`;
+  }).join('');
+}
+
+
+/* STEPPER HELPER */
+function stAdj(id,delta,min,max){
+  const el=document.getElementById(id);
+  if(!el)return;
+  let v=(parseInt(el.value)||0)+delta;
+  v=Math.min(max,Math.max(min,v));
+  el.value=v;
+}
+
+/* AUTO-GENERATE ENQUIRY REF */
+function genRef(){
+  const now=new Date();
+  const d=String(now.getDate()).padStart(2,'0');
+  const m=String(now.getMonth()+1).padStart(2,'0');
+  const y=now.getFullYear();
+  const rnd=Math.floor(1000+Math.random()*9000);
+  return `ENQ-${y}${m}${d}-${rnd}`;
+}
+
+/* DESTINATION DATA — used by genItin destSuggest */
+const DEST_DATA=[
+  {val:'Munnar',  lbl:'Munnar',   sub:'Tea Museum \u00B7 Mattuppetty Dam \u00B7 Rose Garden', icon:'fa-mountain-sun'},
+  {val:'Thekkady',lbl:'Thekkady', sub:'Rajamala \u00B7 Thekkady Lake',                        icon:'fa-tree'},
+];
+
+/* KM BREAKDOWN */
+// Helper: build one segment row
+function kmSegRow(label, id, groupId){
+  return `<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+    <div class="fld" style="flex:1;margin:0">
+      <label class="flbl" style="font-size:9.5px;margin-bottom:4px;color:var(--t2)">${label}</label>
+      <div class="stpr">
+        <button type="button" class="stpr-btn" onclick="stAdj('${id}',-1,0,9999);kmUpdateTotal('${groupId}')"><i class="fa-solid fa-minus"></i></button>
+        <input type="number" id="${id}" value="0" min="0"
+          onfocus="if(this.value=='0')this.value=''"
+          onblur="if(this.value==='')this.value='0'"
+          oninput="kmUpdateTotal('${groupId}')">
+        <button type="button" class="stpr-btn" onclick="stAdj('${id}',1,0,9999);kmUpdateTotal('${groupId}')"><i class="fa-solid fa-plus"></i></button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--t3);flex-shrink:0;width:48px;text-align:right;font-family:var(--fh);font-weight:700" id="${id}_lbl">0 km</div>
+  </div>`;
+}
+
+// Helper: styled section block
+function kmBlock(badgeClass, badgeLabel, badgeColor, subLabel, bodyHtml, groupId){
+  const borderCol = badgeColor==='yard' ? 'rgba(139,92,246,.35)' : 'rgba(56,189,248,.25)';
+  const bgCol     = badgeColor==='yard' ? 'rgba(139,92,246,.08)' : 'rgba(56,189,248,.06)';
+  return `<div style="border:1.5px solid ${borderCol};border-radius:var(--r20);overflow:hidden;margin-bottom:1rem;">
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:${bgCol}">
+      <div class="dbadge ${badgeClass}">${badgeLabel}</div>
+      <span style="font-size:13px;color:var(--t2);font-family:var(--fh);font-weight:600">${subLabel}</span>
+      <span style="margin-left:auto;font-size:12px;font-family:var(--fh);font-weight:800;color:var(--teal)">
+        <span id="${groupId}_total">0</span> km
+      </span>
+    </div>
+    <div style="padding:14px 18px 16px">${bodyHtml}</div>
+  </div>`;
+}
+
+function buildKMBreakdown(){
+  const days=nv('numDays');
+  const nights=nv('numNights');
+
+  // Get Day 1 destination name for labelling
+  const dest1=document.getElementById('dest_d1')?.value||'First Destination';
+
+  let h='';
+
+  /* ── DAY 0: Yard → Starting Point → First Destination ── */
+  let day0Body='';
+  day0Body+=kmSegRow('Yard \u2192 Starting Point',          'km_day0_yard_start',  'km_day0');
+  day0Body+=kmSegRow(`Starting Point \u2192 ${dest1}`,      'km_day0_start_dest1', 'km_day0');
+  h+=kmBlock('db1','Day 0','yard','Departure from Yard',day0Body,'km_day0');
+
+  /* ── ITINERARY DAYS (no yard segments) ── */
+  for(let d=1;d<=days;d++){
+    const destVal=document.getElementById('dest_d'+d)?.value||'';
+    const spots=destVal?DESTS[destVal]||[]:[];
+    let body='';
+
+    if(spots.length>1){
+      // between tourist spots within the destination
+      for(let i=0;i<spots.length-1;i++){
+        body+=kmSegRow(
+          `${spots[i]} \u2192 ${spots[i+1]}`,
+          `km_d${d}_spot${i}_spot${i+1}`,
+          `km_d${d}`
+        );
+      }
+    } else {
+      // generic within-day travel
+      const lbl=destVal?`Travel within ${destVal}`:'Travel (Day '+d+')';
+      body+=kmSegRow(lbl, `km_d${d}_travel`, `km_d${d}`);
+    }
+
+    // Between-day travel: current day destination → next day destination (days 1..N-1)
+    if(d<days){
+      const destNext=document.getElementById('dest_d'+(d+1))?.value||'Next Destination';
+      const from=destVal||`Day ${d} Destination`;
+      body+=kmSegRow(
+        `${from} \u2192 ${destNext||'Day '+(d+1)+' Destination'}`,
+        `km_d${d}_to_d${d+1}`,
+        `km_d${d}`
+      );
+    }
+
+    h+=kmBlock(`${dbc(d-1)}`,'Day '+d,'day','Distance segments (no yard)',body,'km_d'+d);
+  }
+
+  /* ── NIGHT N: Final Destination → End Point → Yard ── */
+  const destFinal=document.getElementById('dest_d'+days)?.value||'Final Destination';
+  let nightBody='';
+  nightBody+=kmSegRow(`${destFinal} \u2192 Ending Point`,  'km_nightN_dest_end',  'km_nightN');
+  nightBody+=kmSegRow('Ending Point \u2192 Yard',           'km_nightN_end_yard',  'km_nightN');
+  h+=kmBlock('db2','Night '+nights,'yard','Return to Yard',nightBody,'km_nightN');
+
+  document.getElementById('kmBody').innerHTML=h;
+  // initialise all totals
+  ['km_day0','km_nightN'];
+  for(let d=1;d<=days;d++) kmUpdateTotal('km_d'+d);
+  kmUpdateTotal('km_day0');
+  kmUpdateTotal('km_nightN');
+}
+
+function kmUpdateTotal(groupId){
+  let total=0;
+  // find all inputs whose id starts with groupId+'_' or groupId+' '
+  document.querySelectorAll(`input[id^="${groupId}_"]`).forEach(el=>{
+    const v=parseInt(el.value)||0;
+    total+=v;
+    const lbl=document.getElementById(el.id+'_lbl');
+    if(lbl)lbl.textContent=v+' km';
+  });
+  const tot=document.getElementById(groupId+'_total');
+  if(tot)tot.textContent=total;
+}
+
+// keep legacy alias used by calculation engine
+function updateDayKM(d){kmUpdateTotal('km_d'+d);}
+
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.dest-sugg.open').forEach(b=>{
+    if(!b.closest('.fld').contains(e.target))b.classList.remove('open');
+  });
+});
+
+/* CALCULATION */
+function calculate(){
+  const school=document.getElementById('schoolName').value.trim()||'N/A';
+  const ref=document.getElementById('enquiryRef').value.trim()||'\u2014';
+  const students=nv('numStudents'),staffs=nv('numStaffs'),days=nv('numDays'),nights=nv('numNights'),totalPax=students+staffs;
+  if(!cat||!students||!days)return;
+  const B={};
+
+  /* VEHICLE — new KM breakdown formula */
+  // Sum ALL km inputs: Day 0 (yard departure), itinerary days, Night N (yard return)
+  let totalKM=0;
+  document.querySelectorAll('input[id^="km_"]').forEach(el=>{totalKM+=parseInt(el.value)||0;});
+  let vC=0,vD=[];
+  fleetList.forEach(fl=>{
+    const vr=RC.vehicles[fl.name];if(!vr)return;
+    const cost=evalFml('vehicle',{totalKM,minKm:vr.minKm,numDays:days,perKmCharge:vr.perKm,basicRent:vr.basic,numVehicles:fl.count});
+    vC+=cost;vD.push({vehicle:fl.name,count:fl.count,totalKM,cost});
+  });
+  B.vehicle={label:'Vehicle Charges',total:vC,det:vD};
+
+  /* ENTRY */
+  let eC=0,eD=[];
+  for(let d=1;d<=days;d++){
+    document.querySelectorAll('#locs_d'+d+' .locitem input:checked').forEach(cb=>{
+      const loc=cb.value,fe=RC.entryFee[loc];if(!fe)return;
+      const rS=fe[cat]||0,rC=fe['CLG']||0;
+      const tot=evalFml('entry',{studentRate:rS,numStudents:students,staffRate:rC,numStaffs:staffs});
+      eC+=tot;eD.push({day:d,loc,tot,rS,rC});
+    });
+  }
+  B.entry={label:'Entry Fees',total:eC,det:eD};
+
+  /* ROOM */
+  let rC=0,rD=[];
+  for(let n=1;n<=nights;n++){
+    if(!document.getElementById('ni'+n)?.checked)continue;
+    document.querySelectorAll('#rrows'+n+' .mr').forEach(row=>{
+      const sh=row.querySelector('[id^="rsh_"]')?.value||'5';
+      const num=parseInt(row.querySelector('[id^="rc_"]')?.value)||0;
+      if(!num)return;
+      const rate=RC.roomRent[sh]?.[cat]||0;
+      const cost=evalFml('room',{ratePerHead:rate,sharingSize:parseInt(sh),numRooms:num});
+      rC+=cost;rD.push({night:n,sh,num,rate,cost});
+    });
+  }
+  B.room={label:'Room Rent',total:rC,det:rD};
+
+  /* FRESH-UPS — per-session, per-row, sharingSize x numRooms */
+  let fuC=0,fuD=[];
+  for(let d=1;d<=days;d++){
+    FU_SESS.forEach(s=>{
+      const sid=s.v.toLowerCase();
+      const wrap=document.getElementById('furows_'+d+'_'+sid);
+      if(!wrap)return;
+      wrap.querySelectorAll('.fu-session-row').forEach(row=>{
+        const shEl=row.querySelector('[id^="fu_sh_"]');
+        const cntEl=row.querySelector('[id^="fu_rc_"]');
+        if(!shEl||!cntEl)return;
+        const sh=shEl.value||'5';
+        const num=parseInt(cntEl.value)||0;
+        if(!num)return;
+        const rate=RC.freshup[sh]?.[cat]||0;
+        const cost=evalFml('freshup',{ratePerHead:rate,sharingSize:parseInt(sh),numRooms:num});
+        fuC+=cost;fuD.push({day:d,session:s.v,sh,num,rate,cost});
+      });
+    });
+  }
+  B.freshup={label:'Fresh-ups',total:fuC,det:fuD};
+
+  /* MEALS */
+  let mC=0,mD=[];
+  for(let d=1;d<=days;d++){
+    MEALS.forEach(m=>{
+      if(!document.getElementById('mc_'+d+'_'+m.k)?.checked)return;
+      const isNV=document.getElementById('nv_'+d+'_'+m.k)?.checked;
+      const tbl=isNV?RC.foodNV:RC.foodVeg,rate=tbl[m.k]?.[cat]||0;
+      const cost=evalFml('food',{ratePerHead:rate,totalPax});
+      mC+=cost;mD.push({day:d,meal:m.lbl,type:isNV?'Non-Veg':'Veg',rate,cost});
+    });
+  }
+  B.meals={label:'Meals',total:mC,det:mD};
+
+  /* ENTERTAINMENT */
+  let entC=0,entD=[];
+  const tv=fleetList.reduce((s,f)=>s+f.count,0)||1;
+  if(document.getElementById('cb_campfire')?.checked){const c=evalFml('entertainment',{costPerEvent:RC.entertainment.Campfire,numVehicles:tv});entC+=c;entD.push({name:'Campfire',rate:RC.entertainment.Campfire,cost:c});}
+  if(document.getElementById('cb_dj')?.checked){const c=evalFml('entertainment',{costPerEvent:RC.entertainment['DJ Party'],numVehicles:tv});entC+=c;entD.push({name:'DJ Party',rate:RC.entertainment['DJ Party'],cost:c});}
+  B.entertainment={label:'Entertainments',total:entC,det:entD};
+
+  /* EXTRAS */
+  let xC=0,xD=[];
+  for(let d=1;d<=days;d++){
+    EXTS.forEach(e=>{
+      if(!document.getElementById('ex_'+d+'_'+e.k)?.checked)return;
+      const cost=evalFml('extra',{costPerDay:RC.extra[e.n]});
+      xC+=cost;xD.push({day:d,name:e.n,cost});
+    });
+  }
+  B.extra={label:'Extra Charges',total:xC,det:xD};
+
+  /* TOTALS */
+  const sub=Object.values(B).reduce((s,b)=>s+b.total,0);
+  const grand=evalFml('grandtotal',{subtotal:sub,profitPct:RC.profit*100});
+  const profit=grand-sub;
+  const perHead=evalFml('perhead',{grandTotal:grand,numStudents:students});
+  renderInvoice({school,ref,students,staffs,days,nights,B,sub,profit,grand,perHead});
+}
+
+/* INVOICE */
+function renderInvoice({school,ref,students,staffs,days,nights,B,sub,profit,grand,perHead}){
+  const SECS=[{k:'vehicle',ic:'fa-bus',col:'#a78bfa'},{k:'entry',ic:'fa-ticket',col:'#fbbf24'},{k:'room',ic:'fa-hotel',col:'#34d399'},{k:'freshup',ic:'fa-shower',col:'#22d3ee'},{k:'meals',ic:'fa-utensils',col:'#fb923c'},{k:'entertainment',ic:'fa-star',col:'#f472b6'},{k:'extra',ic:'fa-briefcase',col:'#f87171'}];
+  let secs='';
+  SECS.forEach(s=>{
+    const b=B[s.k];if(!b||b.total===0)return;let rows='';
+    if(s.k==='vehicle')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">${d.vehicle} \u00D7${d.count} \u2014 Total ${d.totalKM} km across ${days} days</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    else if(s.k==='entry')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">Day ${d.day} \u2014 ${d.loc} (${students}s@\u20B9${d.rS}${staffs?'+'+staffs+'st@\u20B9'+d.rC:''})</span><span class="ca">${fmt(d.tot)}</span></div>`;});
+    else if(s.k==='room')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">Night ${d.night} \u2014 ${d.sh}-Sharing \u00D7 ${d.num} rooms @ \u20B9${d.rate}/head</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    else if(s.k==='freshup')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">Day ${d.day} \u2014 ${d.session} \u2014 ${d.sh}-Sharing \u00D7 ${d.num} rooms @ \u20B9${d.rate}/head</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    else if(s.k==='meals')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">Day ${d.day} \u2014 ${d.meal} [${d.type}] (\u20B9${d.rate} \u00D7 ${students+staffs}pax)</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    else if(s.k==='entertainment')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">${d.name} \u2014 ${fmt(d.rate)} \u00D7 ${fleetList.reduce((s,f)=>s+f.count,0)}v</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    else if(s.k==='extra')b.det.forEach(d=>{rows+=`<div class="crow"><span class="cn">Day ${d.day} \u2014 ${d.name}</span><span class="ca">${fmt(d.cost)}</span></div>`;});
+    secs+=`<div class="csec"><div class="csect" style="color:${s.col}"><i class="fa-solid ${s.ic}" style="margin-right:6px"></i>${b.label}</div>${rows}<div class="crow sub"><span>${b.label} Total</span><span>${fmt(b.total)}</span></div></div>`;
+  });
+  const pct=(RC.profit*100).toFixed(0);
+  const fs=fleetList.length?fleetList.map(f=>f.count+'\u00D7 '+f.name).join(', '):'None';
+  document.getElementById('invInner').innerHTML=`<div class="invc">
+    <div class="invhd"><div class="invlogo">\u2736 Joshy's Tour Planner \u00B7 Tele-Caller Estimate</div><div class="invttl">Trip Cost Estimate</div><div class="invref">Ref: ${ref} \u00B7 ${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div></div>
+    <div class="invmeta">
+      <div class="mbox"><div class="mlbl">Institution</div><div class="mval">${school}</div></div>
+      <div class="mbox"><div class="mlbl">Category</div><div class="mval">${CATL[cat]||cat}</div></div>
+      <div class="mbox"><div class="mlbl">Pax</div><div class="mval">${students}S + ${staffs}St</div></div>
+      <div class="mbox"><div class="mlbl">Duration</div><div class="mval">${days}D / ${nights}N</div></div>
+      <div class="mbox" style="grid-column:span 2"><div class="mlbl">Fleet</div><div class="mval">${fs}</div></div>
+    </div>
+    <div class="divider"></div>${secs}
+    <div class="invtot">
+      <div class="trow"><span class="tlbl">Base Cost</span><span class="tval">${fmt(sub)}</span></div>
+      <div class="trow"><span class="tlbl">Profit (${pct}%)</span><span class="tval" style="color:var(--gold)">${fmt(profit)}</span></div>
+      <div class="grand"><div class="trow"><span class="glbl">Total Trip Cost</span><span class="gval">${fmt(grand)}</span></div></div>
+      <div class="ph">Per Head (\u00F7 ${students} students) = <strong>${fmt(perHead)}</strong></div>
+    </div>
+    <div class="invfoot">Preliminary estimate \u2014 Joshy's Tours &amp; Travels</div>
+    <button class="btn-pdf" onclick="sendPDF()"><i class="fa-solid fa-file-pdf"></i> Send as PDF &nbsp;&mdash;&nbsp; Opens Print / Save Dialog</button>
+  </div>`;
+  const w=document.getElementById('invWrap');w.style.display='block';setTimeout(()=>w.scrollIntoView({behavior:'smooth',block:'start'}),200);
+}
+
+/* RC DRAWER */
+const CATS=['KG','LP','UP','HS','HSS','CLG'],SHARES=['5','4','3','2','1'],VKEYS=Object.keys(DEFAULT_RC.vehicles);
+const FMEALS=[{k:'bf',l:'Breakfast'},{k:'lunch',l:'Lunch'},{k:'tea',l:'Tea & Snacks'},{k:'dinner',l:'Dinner'}];
+function openRC(){buildRC();document.getElementById('rcDr').classList.add('open');document.getElementById('rcOv').classList.add('open');document.body.style.overflow='hidden';}
+function closeRC(){document.getElementById('rcDr').classList.remove('open');document.getElementById('rcOv').classList.remove('open');document.body.style.overflow='';}
+function rcTab(i,el){document.querySelectorAll('#rcTabs .drtab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#rcDr .drpanel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('rcp'+i).classList.add('active');}
+function buildRC(){
+  document.getElementById('rcVg').innerHTML=VKEYS.map(vk=>{const vd=RC.vehicles[vk],id=vk.replace(/\s/g,'_');
+    return`<div class="vci"><div class="vcn">${vk}</div><div class="vcr"><span class="vcl">Basic/day</span><input class="rci" type="number" id="vb_${id}" value="${vd.basic}"></div><div class="vcr"><span class="vcl">Per KM (&#8377;)</span><input class="rci" type="number" id="vk_${id}" value="${vd.perKm}"></div><div class="vcr"><span class="vcl">Min KM</span><input class="rci" type="number" id="vm_${id}" value="${vd.minKm}"></div><div class="vcr"><span class="vcl">City KM</span><input class="rci" type="number" id="vc_${id}" value="${vd.runKm}"></div></div>`;}).join('');
+  buildRCT('rcRoom',SHARES,RC.roomRent,'Sharing','sr');
+  buildRCT('rcFu',SHARES,RC.freshup,'Sharing','sf');
+  buildFT('rcFv',RC.foodVeg,'fv');buildFT('rcFnv',RC.foodNV,'fn');
+  let h=`<thead><tr><th class="rl">Location</th>${CATS.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  Object.keys(RC.entryFee).forEach(loc=>{const id=loc.replace(/\s/g,'_');h+=`<tr><td class="rl">${loc}</td>`;CATS.forEach(c=>{h+=`<td><input class="rci" type="number" id="ef_${id}_${c}" value="${RC.entryFee[loc][c]||0}"></td>`;});h+='</tr>';});
+  document.getElementById('rcEf').innerHTML=h+'</tbody>';
+  h=`<thead><tr><th class="rl">Event</th><th>Cost/Vehicle (&#8377;)</th></tr></thead><tbody>`;
+  Object.entries(RC.entertainment).forEach(([ev,cost])=>{const id=ev.replace(/\s/g,'_');h+=`<tr><td class="rl">${ev}</td><td><input class="rci" type="number" id="ent_${id}" value="${cost}" style="max-width:130px"></td></tr>`;});
+  document.getElementById('rcEnt').innerHTML=h+'</tbody>';
+  h=`<thead><tr><th class="rl">Item</th><th>Cost/Day (&#8377;)</th></tr></thead><tbody>`;
+  Object.entries(RC.extra).forEach(([item,cost])=>{h+=`<tr><td class="rl">${item}</td><td><input class="rci" type="number" id="ext_${item}" value="${cost}" style="max-width:130px"></td></tr>`;});
+  document.getElementById('rcExt').innerHTML=h+'</tbody>';
+  document.getElementById('rcProfit').value=+(RC.profit*100).toFixed(2);
+}
+function buildRCT(tid,rows,obj,rl,pfx){
+  const el=document.getElementById(tid);let h=`<thead><tr><th class="rl">${rl}</th>${CATS.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  rows.forEach(r=>{h+=`<tr><td class="rl">${r} Sharing</td>`;CATS.forEach(c=>{h+=`<td><input class="rci" type="number" id="${pfx}_${r}_${c}" value="${obj[r]?.[c]||0}"></td>`;});h+='</tr>';});
+  el.innerHTML=h+'</tbody>';
+}
+function buildFT(tid,obj,pfx){
+  const el=document.getElementById(tid);let h=`<thead><tr><th class="rl">Meal</th>${CATS.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+  FMEALS.forEach(m=>{h+=`<tr><td class="rl">${m.l}</td>`;CATS.forEach(c=>{h+=`<td><input class="rci" type="number" id="${pfx}_${m.k}_${c}" value="${obj[m.k]?.[c]||0}"></td>`;});h+='</tr>';});
+  el.innerHTML=h+'</tbody>';
+}
+function applyRC(){
+  VKEYS.forEach(vk=>{const id=vk.replace(/\s/g,'_');RC.vehicles[vk].basic=+document.getElementById('vb_'+id).value||0;RC.vehicles[vk].perKm=+document.getElementById('vk_'+id).value||0;RC.vehicles[vk].minKm=+document.getElementById('vm_'+id).value||100;RC.vehicles[vk].runKm=+document.getElementById('vc_'+id).value||0;});
+  SHARES.forEach(r=>CATS.forEach(c=>{let e=document.getElementById('sr_'+r+'_'+c);if(e)RC.roomRent[r][c]=+e.value||0;e=document.getElementById('sf_'+r+'_'+c);if(e)RC.freshup[r][c]=+e.value||0;}));
+  FMEALS.forEach(m=>CATS.forEach(c=>{let e=document.getElementById('fv_'+m.k+'_'+c);if(e)RC.foodVeg[m.k][c]=+e.value||0;e=document.getElementById('fn_'+m.k+'_'+c);if(e)RC.foodNV[m.k][c]=+e.value||0;}));
+  Object.keys(RC.entryFee).forEach(loc=>{const id=loc.replace(/\s/g,'_');CATS.forEach(c=>{const e=document.getElementById('ef_'+id+'_'+c);if(e)RC.entryFee[loc][c]=+e.value||0;});});
+  Object.keys(RC.entertainment).forEach(ev=>{const e=document.getElementById('ent_'+ev.replace(/\s/g,'_'));if(e)RC.entertainment[ev]=+e.value||0;});
+  Object.keys(RC.extra).forEach(item=>{const e=document.getElementById('ext_'+item);if(e)RC.extra[item]=+e.value||0;});
+  const p=document.getElementById('rcProfit');if(p)RC.profit=(+p.value||0)/100;
+  closeRC();showToast('rcToast','<i class="fa-solid fa-check-circle"></i> Rate card updated!');
+}
+function resetRC(){RC=JSON.parse(JSON.stringify(DEFAULT_RC));buildRC();showToast('rcToast','<i class="fa-solid fa-rotate-left"></i> Reset to defaults.');}
+
+/* FORMULA DRAWER */
+const FKEYS=['vehicle','room','freshup','entry','food','entertainment','extra','grandtotal','perhead'];
+function openFML(){renderFML();document.getElementById('fmlDr').classList.add('open');document.getElementById('fmlOv').classList.add('open');document.body.style.overflow='hidden';}
+function closeFML(){document.getElementById('fmlDr').classList.remove('open');document.getElementById('fmlOv').classList.remove('open');document.body.style.overflow='';}
+function fmlTab(i,el){document.querySelectorAll('#fmlTabs .drtab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#fmlBody .drpanel').forEach(p=>p.classList.remove('active'));el.classList.add('active');document.getElementById('fp'+i).classList.add('active');}
+function renderFML(){
+  const tabs=document.getElementById('fmlTabs'),body=document.getElementById('fmlBody');
+  tabs.innerHTML=FKEYS.map((k,i)=>`<button class="drtab${i===0?' active':''}" onclick="fmlTab(${i},this)"><i class="fa-solid ${LF[k].icon}" style="margin-right:5px"></i>${LF[k].label}</button>`).join('');
+  body.innerHTML=FKEYS.map((k,i)=>{
+    const f=LF[k],sv=Object.fromEntries(f.vars.map(v=>[v.name,v.sample])),val=valFml(f.formula,sv),rt=val.ok?fmt(val.result):'Error';
+    const vRows=f.vars.map(v=>`<div class="varr"><div><span class="vchip ${v.chip}">${v.name}</span></div><div>${v.desc}</div><div>${v.sample.toLocaleString('en-IN')}</div></div>`).join('');
+    return`<div class="drpanel${i===0?' active':''}" id="fp${i}"><div class="fmlcard">
+      <div class="fmlhd"><div class="fmlnum" style="background:${f.color}18;border:1px solid ${f.color}40;color:${f.color}"><i class="fa-solid ${f.icon}"></i></div><div><div class="fmlttl">${f.label}</div><div class="fmlsub">${f.desc}</div></div></div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--t3);margin-bottom:6px">Variables</div>
+      <div class="varleg"><div class="varleg-h"><div>Variable</div><div>Meaning</div><div>Sample</div></div>${vRows}</div>
+      <div class="fmlel"><span><i class="fa-solid fa-code" style="color:${f.color};margin-right:5px"></i>Formula (JS)</span><span class="fmlst ${val.ok?'ok':'err'}" id="fst${i}"><i class="fa-solid ${val.ok?'fa-circle-check':'fa-circle-xmark'}"></i>&nbsp;${val.ok?'Valid &mdash; '+rt:'Invalid'}</span></div>
+      <textarea class="fmlta${val.ok?'':' eb'}" id="fe${i}" rows="2" spellcheck="false" oninput="chkFml(${i},'${k}')">${f.formula}</textarea>
+      <div class="fmlem" id="fem${i}">${val.ok?'':'Error: '+val.msg}</div>
+      <div class="fmlprev"><i class="fa-solid fa-flask" style="color:var(--mint);margin-right:5px"></i>Sample &rarr; <strong id="fpv${i}">${val.ok?rt:'\u2014'}</strong></div>
+      <div class="fmlnote"><i class="fa-solid fa-lightbulb" style="color:var(--sky);margin-right:5px"></i>${f.note}</div>
+    </div></div>`;
+  }).join('');
+}
+function chkFml(i,k){
+  const ta=document.getElementById('fe'+i),f=LF[k],sv=Object.fromEntries(f.vars.map(v=>[v.name,v.sample])),val=valFml(ta.value.trim(),sv);
+  const st=document.getElementById('fst'+i),em=document.getElementById('fem'+i),pv=document.getElementById('fpv'+i);
+  if(val.ok){ta.classList.remove('eb');st.className='fmlst ok';st.innerHTML='<i class="fa-solid fa-circle-check"></i> Valid &mdash; '+fmt(val.result);em.textContent='';pv.textContent=fmt(val.result);}
+  else{ta.classList.add('eb');st.className='fmlst err';st.innerHTML='<i class="fa-solid fa-circle-xmark"></i> Invalid';em.textContent='Error: '+val.msg;pv.textContent='\u2014';}
+}
+function applyFML(){
+  let err=false;
+  FKEYS.forEach((k,i)=>{const ta=document.getElementById('fe'+i);if(!ta)return;const sv=Object.fromEntries(LF[k].vars.map(v=>[v.name,v.sample])),val=valFml(ta.value.trim(),sv);if(!val.ok)err=true;else LF[k].formula=ta.value.trim();});
+  if(err){alert('Some formulas have errors. Fix them before applying.');return;}
+  closeFML();showToast('fmlToast','<i class="fa-solid fa-function"></i> Formulas applied!');
+}
+function resetFML(){LF=JSON.parse(JSON.stringify(DEFAULT_FORMULAS));renderFML();showToast('fmlToast','<i class="fa-solid fa-rotate-left"></i> Formulas reset.');}
+
+function showToast(id,msg){const t=document.getElementById(id);t.innerHTML=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000);}
+
+
+/* SEND AS PDF */
+function sendPDF(){
+  const content=document.getElementById('invInner')?.innerHTML;
+  if(!content){alert('Please generate the estimate first.');return;}
+  const w=window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head>
+  <meta charset="UTF-8">
+  <title>Joshy Trip Estimate</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Poppins',sans-serif;background:#fff;color:#111;padding:24px;max-width:760px;margin:0 auto;}
+  .invc{background:#fff;}
+  .invhd{text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:2px solid #e2e8f0;}
+  .invlogo{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#00b4a0;margin-bottom:.3rem;}
+  .invttl{font-size:1.6rem;font-weight:800;color:#111;}
+  .invref{font-size:12px;color:#666;margin-top:3px;}
+  .invmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1.2rem;}
+  .mbox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;}
+  .mlbl{font-size:8.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#94a3b8;margin-bottom:2px;}
+  .mval{font-size:12.5px;font-weight:700;color:#111;}
+  .divider{height:1px;background:#e2e8f0;margin:.8rem 0;}
+  .csec{margin-bottom:.8rem;}
+  .csect{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:5px 0;border-bottom:1px solid #e2e8f0;margin-bottom:4px;}
+  .crow{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #f1f5f9;}
+  .crow:last-child{border-bottom:none;}
+  .cn{color:#64748b;}.ca{font-weight:700;color:#111;flex-shrink:0;margin-left:1rem;}
+  .crow.sub{border-top:1px solid #e2e8f0;padding-top:5px;font-weight:700;}
+  .invtot{background:#f0fdf9;border:1px solid #a7f3d0;border-radius:10px;padding:1.2rem;margin-top:.8rem;}
+  .trow{display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;}
+  .tlbl{color:#64748b;}.tval{font-weight:700;}
+  .grand{margin-top:.8rem;padding-top:.8rem;border-top:2px solid #34d399;}
+  .glbl{font-size:15px;font-weight:800;}.gval{font-size:2rem;font-weight:900;color:#00b4a0;}
+  .ph{text-align:right;font-size:12px;color:#64748b;margin-top:6px;}
+  .ph strong{color:#059669;font-size:14px;}
+  .invfoot{text-align:center;margin-top:1rem;font-size:11px;color:#94a3b8;}
+  .btn-pdf{display:none;}
+  @media print{.btn-pdf{display:none!important;}}
+  </style></head><body>${content}</body></html>`);
+  w.document.close();
+  setTimeout(()=>{w.focus();w.print();},500);
+}
+
+/* INIT */
+buildProg();
+document.getElementById('enquiryRef').value=genRef();
+document.getElementById('card-0').classList.add('cur');
+document.getElementById('card-0').style.position='relative';
+</script>
+</body>
+</html>
